@@ -11,7 +11,10 @@
     {
       "path": "pages/index/index",
       "style": {
-        "navigationBarTitleText": "首页"
+        "navigationBarTitleText": "首页",
+        "enablePullDownRefresh": true,
+        "backgroundColor": "#F7F8FA",
+        "backgroundColorBottom": "#F7F8FA"
       }
     },
     {
@@ -29,7 +32,21 @@
     {
       "path": "pages/login/index",
       "style": {
-        "navigationBarTitleText": "登录"
+        "navigationBarTitleText": "登录",
+        "backgroundColor": "#F7F8FA",
+        "backgroundColorBottom": "#F7F8FA"
+      }
+    },
+    {
+      "path": "pages/detail/index",
+      "style": {
+        "navigationBarTitleText": "详情"
+      }
+    },
+    {
+      "path": "pages/editor/index",
+      "style": {
+        "navigationBarTitleText": "编辑"
       }
     }
   ],

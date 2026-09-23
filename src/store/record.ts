@@ -19,6 +19,8 @@ export const useRecordStore = defineStore("record", () => {
     return Array.from(tagSet);
   });
 
+  const getRecordById = computed(() => (id: string) => records.value.find((r) => r.id === id));
+
   function persist() {
     uni.setStorageSync(CACHE_KEY, JSON.stringify(records.value));
   }
@@ -78,6 +80,7 @@ export const useRecordStore = defineStore("record", () => {
     keyword,
     activeTag,
     allTags,
+    getRecordById,
     init,
     fetchList,
     addRecord,

@@ -1,11 +1,33 @@
 <template>
-  <view class="flex flex-col items-center p-40rpx">
-    <text class="text-36rpx font-bold mt-60rpx mb-40rpx">{{ isLogin ? "登录" : "注册" }}</text>
-    <input v-model="username" class="form-input" placeholder="请输入用户名（3-20位）" />
-    <input v-model="password" class="form-input" placeholder="请输入密码（6-32位）" type="password" />
-    <wd-button block custom-class="mt-40rpx" @click="handleSubmit">{{ isLogin ? "登录" : "注册并登录" }}</wd-button>
-    <view class="mt-30rpx" @click="isLogin = !isLogin">
-      <text class="text-26rpx text-blue-500">{{ isLogin ? "没有账号？去注册" : "已有账号？去登录" }}</text>
+  <view class="min-h-screen bg-[#F7F8FA]">
+    <!-- 品牌区 -->
+    <view class="flex flex-col items-center pt-160rpx">
+      <text class="brand-title text-72rpx text-[#3E63DD]">通关秘籍</text>
+      <text class="mt-20rpx text-26rpx text-[#67676C]">分享知识，随笔</text>
+    </view>
+
+    <!-- 表单卡片 -->
+    <view class="mx-40rpx mt-120rpx rounded-24rpx bg-white p-40rpx">
+      <input
+        v-model="username"
+        class="mb-24rpx h-88rpx w-full rounded-12rpx border border-solid border-[#3C3C43]/20 px-24rpx text-28rpx text-[#3C3C43]"
+        placeholder="请输入用户名（3-20位）"
+        placeholder-style="color: #67676C;" />
+      <input
+        v-model="password"
+        class="h-88rpx w-full rounded-12rpx border border-solid border-[#3C3C43]/20 px-24rpx text-28rpx text-[#3C3C43]"
+        type="password"
+        password
+        placeholder="请输入密码（6-32位）"
+        placeholder-style="color: #67676C;" />
+      <view class="mt-48rpx h-88rpx flex-center rounded-44rpx bg-[#3E63DD]" @click="handleSubmit">
+        <text class="text-30rpx text-white">{{ isLogin ? "进入" : "创建账号" }}</text>
+      </view>
+      <view class="mt-30rpx flex justify-center" @click="isLogin = !isLogin">
+        <text class="text-26rpx text-[#3E63DD]">
+          {{ isLogin ? "没有账号？去注册" : "已有账号？去登录" }}
+        </text>
+      </view>
     </view>
   </view>
 </template>
@@ -38,15 +60,7 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-/* stylelint-disable declaration-property-value-no-unknown -- uni-app rpx 单位 */
-.form-input {
-  box-sizing: border-box;
-  width: 100%;
-  height: 80rpx;
-  padding: 0 24rpx;
-  margin-top: 24rpx;
-  font-size: 28rpx;
-  border: 1rpx solid #dcdfe6;
-  border-radius: 12rpx;
+.brand-title {
+  font-family: "STKaiti", "KaiTi", "Kaiti SC", "SimSun", serif;
 }
 </style>
