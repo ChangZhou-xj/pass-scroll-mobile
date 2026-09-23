@@ -26,5 +26,19 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
+import { onShow } from "@dcloudio/uni-app";
+import { useUserStore } from "@/store/modules/user";
+import { useRecordStore } from "@/store/record";
+
 const title = ref("UniApp 模板应用");
+const userStore = useUserStore();
+const recordStore = useRecordStore();
+
+onShow(() => {
+  if (!userStore.token) {
+    uni.navigateTo({ url: "/pages/login/index" });
+    return;
+  }
+  recordStore.fetchList();
+});
 </script>
