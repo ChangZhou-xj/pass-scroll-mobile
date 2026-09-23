@@ -16,7 +16,6 @@
       <input
         v-model="password"
         class="h-88rpx w-full rounded-12rpx border border-solid border-[#3C3C43]/20 px-24rpx text-28rpx text-[#3C3C43]"
-        type="password"
         password
         placeholder="请输入密码（6-32位）"
         placeholder-style="color: #67676C;" />
