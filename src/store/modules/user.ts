@@ -1,39 +1,39 @@
-//  src/store/module/user.ts
+//  src/store/modules/user.ts
 import { defineStore } from "pinia";
-import AuthAPI from "@/api/auth";
-import UserAPI, { UserInfo } from "@/api/user";
+import AuthAPI, { AuthResult, AuthUserInfo } from "@/api/auth";
 
 export const useUserStore = defineStore("user", () => {
-  // 确保 token 是响应式的
   const token = ref<string>(uni.getStorageSync("token") || "");
-  const userInfo = ref<UserInfo | null>(null);
+  const userInfo = ref<AuthUserInfo | null>(null);
+
+  const applyAuth = (result: AuthResult) => {
+    token.value = result.token;
+    userInfo.value = result.user;
+    uni.setStorageSync("token", result.token);
+  };
 
   // 登录
   const login = async (username: string, password: string) => {
-    const { tokenType, accessToken } = await AuthAPI.login(username, password);
-    token.value = `${tokenType} ${accessToken}`; // Bearer token
-    uni.setStorageSync("token", token.value);
+    applyAuth(await AuthAPI.login(username, password));
   };
 
-  // 获取用户信息
-  const getUserInfo = async () => {
-    const info = await UserAPI.getUserInfo();
-    userInfo.value = info;
+  // 注册（成功后直接视为登录）
+  const register = async (username: string, password: string) => {
+    applyAuth(await AuthAPI.register(username, password));
   };
 
-  // 登出
-  const logout = async () => {
-    await AuthAPI.logout();
+  // 登出：JWT 无状态，仅本地清除
+  const logout = () => {
+    token.value = "";
     userInfo.value = null;
-    token.value = ""; // 清空 token
-    uni.removeStorageSync("token"); // 从本地缓存移除 token
+    uni.removeStorageSync("token");
   };
 
   return {
     token,
     userInfo,
     login,
+    register,
     logout,
-    getUserInfo,
   };
 });
