@@ -27,6 +27,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       res.status(HttpStatus.OK).json({ code: 10001, message: "数据已存在（唯一约束冲突）", data: null });
       return;
     }
+    console.error("unhandled exception", exception);
     res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ code: 500, message: "服务器内部错误", data: null });
   }
 }
