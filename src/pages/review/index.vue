@@ -135,6 +135,9 @@ onShow(async () => {
   if (recordStore.records.length === 0) {
     await recordStore.fetchList();
   }
+  // 校验当前题池内有效性：删除/编辑/筛选变化后 current 可能已过期，用池中同 id 对象刷新或重抽
+  const currentId = current.value?.id;
+  current.value = currentId ? recordStore.records.find((item) => item.id === currentId) : undefined;
   if (!current.value) pickRandom();
 });
 </script>
