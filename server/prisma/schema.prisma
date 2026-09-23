@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  records   Record[]
+  tags      Tag[]
+}
+
+model Record {
+  id        String      @id @default(cuid())
+  title     String      @db.VarChar(200)
+  content   String      @db.Text
+  isPinned  Boolean     @default(false)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tags      RecordTag[]
+
+  @@index([userId, updatedAt])
+}
+
+model Tag {
+  id      String      @id @default(cuid())
+  name    String
+  userId  String
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  records RecordTag[]
+
+  @@unique([userId, name])
+}
+
+model RecordTag {
+  recordId String
+  tagId    String
+  record   Record @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([recordId, tagId])
+}
