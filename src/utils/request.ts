@@ -48,7 +48,12 @@ export default function request<T = unknown>(options: RequestOptions): Promise<T
       success: (res) => {
         const body = res.data as ApiResponse<T>;
         if (res.statusCode === 401) {
-          toLogin();
+          if (options.auth !== false) {
+            toLogin();
+          } else {
+            // 登录/注册等免鉴权请求的 401（如密码错误）展示后端 message，不触发强制登出
+            uni.showToast({ title: body?.message || "登录失败", icon: "none" });
+          }
           reject(body);
           return;
         }
