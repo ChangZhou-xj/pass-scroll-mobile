@@ -105,19 +105,26 @@
     "vue-tsc": "^1.0.24"
   },
   "lint-staged": {
-    "*.{js,ts}": [
+    "src/**/*.{js,ts}": [
       "eslint --fix",
+      "prettier --write"
+    ],
+    "vite.config.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "server/**/*.ts": [
       "prettier --write"
     ],
     "*.{cjs,json}": [
       "prettier --write"
     ],
-    "*.{vue,html}": [
+    "src/**/*.{vue,html}": [
       "eslint --fix",
       "prettier --write",
       "stylelint --fix"
     ],
-    "*.{scss,css}": [
+    "src/**/*.{scss,css}": [
       "stylelint --fix",
       "prettier --write"
     ],

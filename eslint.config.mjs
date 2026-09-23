@@ -43,7 +43,8 @@ export default [
       "**/*.config.mjs",
       "**/*.tsbuildinfo",
       "/src/manifest.json",
-      "/commitlint.config.cjs"
+      "/commitlint.config.cjs",
+      "/server"
     ]
   },
 
