@@ -13,7 +13,7 @@
 | 数据库       | MySQL 8，Docker Compose 本地/服务器运行                                    |
 | 仓库结构     | monorepo：当前仓库新增 `server/` 子目录，独立 package.json，不用 workspace |
 | 前端数据策略 | API 为主 + 本地 storage 只读缓存（断网可看不能改）                         |
-| 后端端口     | 3100，前端走现有 vite proxy（`VITE_APP_BASE_API=/api`）                    |
+| 后端端口     | 3100，后端开启 CORS，前端经 `VITE_APP_API_URL` 直连，不走 vite proxy       |
 
 ## 1. 项目结构
 
