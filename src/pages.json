@@ -18,15 +18,19 @@
       }
     },
     {
-      "path": "pages/history/index",
+      "path": "pages/review/index",
       "style": {
-        "navigationBarTitleText": "历史"
+        "navigationBarTitleText": "随机复习",
+        "backgroundColor": "#F7F8FA",
+        "backgroundColorBottom": "#F7F8FA"
       }
     },
     {
       "path": "pages/profile/index",
       "style": {
-        "navigationBarTitleText": "我的"
+        "navigationBarTitleText": "我的",
+        "backgroundColor": "#F7F8FA",
+        "backgroundColorBottom": "#F7F8FA"
       }
     },
     {
@@ -52,13 +56,13 @@
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "uni-app",
+    "navigationBarTitleText": "通关秘籍",
     "navigationBarBackgroundColor": "#F8F8F8",
     "backgroundColor": "#F8F8F8"
   },
   "tabBar": {
     "color": "#8C8C8C",
-    "selectedColor": "#4080FF",
+    "selectedColor": "#3E63DD",
     "backgroundColor": "#FFFFFF",
     "borderStyle": "black",
     "list": [
@@ -69,10 +73,10 @@
         "selectedIconPath": "static/tabbar/home-active.png"
       },
       {
-        "pagePath": "pages/history/index",
-        "text": "历史",
-        "iconPath": "static/tabbar/history.png",
-        "selectedIconPath": "static/tabbar/history-active.png"
+        "pagePath": "pages/review/index",
+        "text": "复习",
+        "iconPath": "static/tabbar/review.png",
+        "selectedIconPath": "static/tabbar/review-active.png"
       },
       {
         "pagePath": "pages/profile/index",
