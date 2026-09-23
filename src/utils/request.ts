@@ -17,13 +17,23 @@ const BASE_URL = import.meta.env.VITE_APP_API_URL as string;
 
 let redirecting = false;
 
-function toLogin() {
+async function toLogin() {
   if (redirecting) return;
   redirecting = true;
   uni.removeStorageSync("token");
+  // 同步重置 Pinia 用户态，避免 store token 与 storage 不一致导致首页守卫弹跳循环。
+  // request.ts → store/modules/user.ts → api/auth.ts → request.ts 存在循环依赖，须用动态导入打破。
+  try {
+    const { useUserStore } = await import("@/store/modules/user");
+    // 经 store action 重置：本项目 setup store 的 ref 在类型层未解包（已知基线异常），直接赋值会报类型错误
+    useUserStore().resetAuthState();
+  } catch (e) {
+    console.error("重置用户态失败", e);
+  }
   uni.showToast({ title: "登录已过期，请重新登录", icon: "none" });
   setTimeout(() => {
-    uni.navigateTo({
+    // reLaunch 清空页面栈，防止返回键回到过期页面再次触发 401 造成页面堆叠
+    uni.reLaunch({
       url: "/pages/login/index",
       complete: () => {
         redirecting = false;
