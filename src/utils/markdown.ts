@@ -52,10 +52,13 @@ let isH5 = false;
 isH5 = true;
 // #endif
 
-/** H5 端把样式值中的 rpx 换算为 px，其余平台原样返回 */
+/** H5 端仅在 style 属性值内把 rpx 换算为 px；
+ * 不做整段替换，避免改写正文文本、代码块内容与 URL 中的 rpx。其余平台原样返回 */
 function adaptUnits(html: string): string {
   if (!isH5) return html;
-  return html.replace(/(\d+(?:\.\d+)?)rpx/g, (_match, value) => `${uni.upx2px(Number(value))}px`);
+  return html.replace(/style="([^"]*)"/g, (match, css: string) => {
+    return `style="${css.replace(/(\d+(?:\.\d+)?)rpx/g, (_m, value) => `${uni.upx2px(Number(value))}px`)}"`;
+  });
 }
 
 /** 给 HTML 标签注入内联样式 */
