@@ -90,16 +90,18 @@ model RecordTag {
 
 统一响应 `{ code: 0, message: 'ok', data: T }`；非 0 即业务错误。
 
-| 方法   | 路径                 | 说明                                                                                             |
-| ------ | -------------------- | ------------------------------------------------------------------------------------------------ |
-| POST   | /api/auth/register   | `{username, password}` → `{token, user}`                                                         |
-| POST   | /api/auth/login      | 同上                                                                                             |
-| GET    | /api/records         | `keyword`（title/content 模糊）、`tag`、`page`（默认 1）、`pageSize`（默认 20）→ `{list, total}` |
-| POST   | /api/records         | `{title, content, tags[]}`                                                                       |
-| GET    | /api/records/:id     | 单条详情                                                                                         |
-| PATCH  | /api/records/:id     | `{title?, content?, tags?}`                                                                      |
-| DELETE | /api/records/:id     | 删除                                                                                             |
-| POST   | /api/records/:id/pin | 切换置顶                                                                                         |
+| 方法   | 路径             | 说明                                                                                             |
+| ------ | ---------------- | ------------------------------------------------------------------------------------------------ |
+| POST   | /auth/register   | `{username, password}` → `{token, user}`                                                         |
+| POST   | /auth/login      | 同上                                                                                             |
+| GET    | /records         | `keyword`（title/content 模糊）、`tag`、`page`（默认 1）、`pageSize`（默认 20）→ `{list, total}` |
+| POST   | /records         | `{title, content, tags[]}`                                                                       |
+| GET    | /records/:id     | 单条详情                                                                                         |
+| PATCH  | /records/:id     | `{title?, content?, tags?}`                                                                      |
+| DELETE | /records/:id     | 删除                                                                                             |
+| POST   | /records/:id/pin | 切换置顶                                                                                         |
+
+- 路径无全局前缀；后端开启 CORS，前端经 `VITE_APP_API_URL` 直连，不走 vite proxy
 
 - 列表排序：`isPinned` desc → `updatedAt` desc（与现有前端 store 一致）
 - `/records` 全部走 JwtAuthGuard，按 userId 隔离；访问他人记录返回 404（不泄露存在性）
@@ -108,7 +110,7 @@ model RecordTag {
 
 - 新增 `src/utils/request.ts`：封装 `uni.request`，baseURL 取 env，自动带 `Authorization: Bearer <token>`；401 清 token 跳登录页；非 0 code 统一 toast
 - 新增 `src/api/auth.ts`；填充 `src/api/record.ts`（当前为空文件）：纯接口函数
-- 新增 `src/store/auth.ts`：token/user 状态，登录/注册/登出
+- 改造现有 `src/store/modules/user.ts`：token/user 状态，登录/注册/登出（复用模板已有 store，删除对模板残留 `@/api/user` 的依赖）
 - 改造 `src/store/record.ts`：actions 全部 async 调 API；成功后写 storage 作只读缓存；`init()` 先读缓存渲染再拉 API 刷新；断网保留缓存并 toast
 - 新增登录/注册页 `src/pages/login/`，`pages.json` 注册路由，首页 `onShow` 检查 token，未登录跳登录页
 - 删除 `src/store/record.ts` 中重复定义的 `RecordItem/RecordForm`，统一引用 `src/types/record.d.ts`
