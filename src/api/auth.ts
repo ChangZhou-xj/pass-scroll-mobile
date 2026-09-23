@@ -1,44 +1,22 @@
 import request from "@/utils/request";
 
-const AuthAPI = {
-  /**
-   * 登录接口
-   *
-   * @param username 用户名
-   * @param password 密码
-   * @returns 返回 token
-   */
-  login(username: string, password: string): Promise<LoginResult> {
-    return request<LoginResult>({
-      url: "/api/v1/auth/login",
-      method: "POST",
-      data: {
-        username,
-        password,
-      },
-      header: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    });
-  },
+export interface AuthUserInfo {
+  id: string;
+  username: string;
+}
 
-  /**
-   * 登出接口
-   */
-  logout(): Promise<void> {
-    return request({
-      url: "/api/v1/auth/logout",
-      method: "DELETE",
-    });
+export interface AuthResult {
+  token: string;
+  user: AuthUserInfo;
+}
+
+const AuthAPI = {
+  login(username: string, password: string): Promise<AuthResult> {
+    return request<AuthResult>({ url: "/auth/login", method: "POST", data: { username, password }, auth: false });
+  },
+  register(username: string, password: string): Promise<AuthResult> {
+    return request<AuthResult>({ url: "/auth/register", method: "POST", data: { username, password }, auth: false });
   },
 };
 
 export default AuthAPI;
-
-/** 登录响应 */
-export interface LoginResult {
-  /** 访问token */
-  accessToken?: string;
-  /** token 类型 */
-  tokenType?: string;
-}
