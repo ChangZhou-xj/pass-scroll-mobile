@@ -113,9 +113,9 @@ const selectTag = (tag: string) => {
   recordStore.fetchList();
 };
 
-// chips 布局类全状态一致；颜色必须走 :style——unocss-preset-weapp 的 transformerClass
-// 只转换模板静态 class 属性中的 arbitrary value，动态 :class 字符串不会生成对应 CSS
-const chipClass = "mr-16rpx rounded-32rpx px-28rpx py-10rpx text-24rpx";
+// chips 布局类全状态一致（shrink-0 + nowrap 防止 flex 挤压换行变形）；颜色必须走 :style——
+// unocss-preset-weapp 的 transformerClass 只转换模板静态 class 属性中的 arbitrary value，动态 :class 不生成对应 CSS
+const chipClass = "mr-16rpx shrink-0 whitespace-nowrap rounded-32rpx px-28rpx py-10rpx text-24rpx";
 
 const chipStyle = (active: boolean) =>
   active ? "background: #3E63DD; color: #FFFFFF;" : "background: #FFFFFF; color: #67676C;";
