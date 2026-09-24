@@ -180,9 +180,18 @@ const handleSave = async () => {
     uni.showToast({ title: "已保存", icon: "none" });
     uni.navigateBack();
   } catch (e) {
-    // 乐观锁冲突：重新拉取最新内容与版本号，用户基于最新版继续编辑
+    // 乐观锁冲突：绕过 store 直拉远端最新内容与版本号，用户基于最新版继续编辑
     if ((e as { code?: number })?.code === 10409 && editId.value) {
-      await prefill(editId.value);
+      try {
+        const fresh = await getRecord(editId.value);
+        title.value = fresh.title;
+        content.value = fresh.content;
+        tags.value = [...fresh.tags];
+        version.value = fresh.version;
+        mode.value = "edit";
+      } catch {
+        // request.ts 已统一 toast
+      }
     }
   } finally {
     saving.value = false;
