@@ -1,8 +1,8 @@
 <template>
-  <view class="min-h-screen bg-[#F7F8FA] pb-60rpx">
+  <view class="min-h-screen bg-[#F7F8FA] pb-160rpx">
     <!-- 有当前题 -->
     <template v-if="current">
-      <view class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx">
+      <view class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx shadow-[0_4rpx_24rpx_rgba(62,99,221,0.06)]">
         <view class="flex items-center">
           <text v-if="current.isPinned" class="mr-8rpx text-32rpx">📌</text>
           <text class="note-title text-40rpx font-bold text-[#3C3C43]">{{ current.title }}</text>
@@ -34,18 +34,6 @@
         <view class="mt-24rpx flex justify-center">
           <text class="text-22rpx text-[#67676C]">先自己作答，点开「答案」对照</text>
         </view>
-
-        <!-- 掌握度标记：答案展开后浮现 -->
-        <view v-if="showMark" class="mt-24rpx flex">
-          <view
-            class="mr-20rpx h-80rpx flex-1 flex-center rounded-40rpx border-2rpx border-solid border-[#F0B429] bg-white"
-            @click="mark('LEARNING')">
-            <text class="text-28rpx text-[#F0B429]">仍需复习</text>
-          </view>
-          <view class="h-80rpx flex-1 flex-center rounded-40rpx bg-[#42B883]" @click="mark('MASTERED')">
-            <text class="text-28rpx text-white">已掌握</text>
-          </view>
-        </view>
       </view>
 
       <!-- 池大小提示 -->
@@ -69,6 +57,22 @@
         </view>
         <view class="h-88rpx flex-1 flex-center rounded-44rpx bg-[#3E63DD]" @click="pickRandom">
           <text class="text-28rpx text-white">换一题</text>
+        </view>
+      </view>
+
+      <!-- 掌握度标记：答案展开后浮现，固定底部双大按钮 -->
+      <view
+        v-if="showMark"
+        class="fixed bottom-0 left-0 right-0 z-50 border-t border-solid border-[#EEEEEE] bg-white px-30rpx py-16rpx">
+        <view class="flex">
+          <view
+            class="mr-20rpx h-96rpx flex-1 flex-center rounded-48rpx border-2rpx border-solid border-[#F0B429] bg-white"
+            @click="mark('LEARNING')">
+            <text class="text-28rpx text-[#F0B429]">仍需复习</text>
+          </view>
+          <view class="h-96rpx flex-1 flex-center rounded-48rpx bg-[#42B883]" @click="mark('MASTERED')">
+            <text class="text-28rpx text-white">已掌握</text>
+          </view>
         </view>
       </view>
     </template>

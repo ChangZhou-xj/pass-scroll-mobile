@@ -1,5 +1,16 @@
 <template>
   <view class="min-h-screen bg-[#F7F8FA] px-30rpx pb-200rpx">
+    <!-- 品牌区 -->
+    <view class="mt-24rpx flex items-end justify-between">
+      <view class="flex flex-col">
+        <text class="brand-title text-44rpx text-[#3E63DD]">通关秘籍</text>
+        <text class="mt-8rpx text-22rpx text-[#67676C]">分享知识，随笔</text>
+      </view>
+      <view v-if="recordStore.records.length > 0" class="shrink-0">
+        <text class="text-22rpx text-[#67676C]">已掌握 {{ masteredCount }}/{{ recordStore.total }}</text>
+      </view>
+    </view>
+
     <!-- 搜索区 -->
     <view class="mt-20rpx flex items-center rounded-32rpx bg-white px-28rpx">
       <input
@@ -85,6 +96,8 @@ const emptyText = computed(() =>
   Boolean(recordStore.keyword) || Boolean(recordStore.activeTag) ? "没有匹配的记录" : "还没有记录，点右下角 + 写第一条",
 );
 
+const masteredCount = computed(() => recordStore.records.filter((r) => r.mastery === "MASTERED").length);
+
 const handleSearch = () => {
   recordStore.fetchList();
 };
@@ -128,3 +141,9 @@ onPullDownRefresh(async () => {
   uni.stopPullDownRefresh();
 });
 </script>
+
+<style scoped>
+.brand-title {
+  font-family: "STKaiti", "KaiTi", "Kaiti SC", "SimSun", serif;
+}
+</style>

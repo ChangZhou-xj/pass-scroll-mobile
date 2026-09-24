@@ -10,23 +10,40 @@
       </view>
 
       <!-- 数据统计卡 -->
-      <view class="mx-30rpx mt-24rpx flex rounded-24rpx bg-white p-30rpx">
-        <view class="flex-1 flex-col flex-center">
-          <text class="text-44rpx font-bold text-[#3E63DD]">{{ stats.total }}</text>
-          <text class="mt-8rpx text-24rpx text-[#67676C]">笔记</text>
+      <view class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx shadow-[0_4rpx_24rpx_rgba(62,99,221,0.06)]">
+        <view class="flex">
+          <view class="flex-1 flex-col flex-center">
+            <text class="text-44rpx font-bold text-[#3E63DD]">{{ stats.total }}</text>
+            <text class="mt-8rpx text-24rpx text-[#67676C]">笔记</text>
+          </view>
+          <view class="flex-1 flex-col flex-center">
+            <text class="text-44rpx font-bold text-[#3E63DD]">{{ stats.tagCount }}</text>
+            <text class="mt-8rpx text-24rpx text-[#67676C]">标签</text>
+          </view>
+          <view class="flex-1 flex-col flex-center">
+            <text class="text-44rpx font-bold text-[#3E63DD]">{{ stats.pinnedCount }}</text>
+            <text class="mt-8rpx text-24rpx text-[#67676C]">置顶</text>
+          </view>
         </view>
-        <view class="flex-1 flex-col flex-center">
-          <text class="text-44rpx font-bold text-[#3E63DD]">{{ stats.tagCount }}</text>
-          <text class="mt-8rpx text-24rpx text-[#67676C]">标签</text>
-        </view>
-        <view class="flex-1 flex-col flex-center">
-          <text class="text-44rpx font-bold text-[#3E63DD]">{{ stats.pinnedCount }}</text>
-          <text class="mt-8rpx text-24rpx text-[#67676C]">置顶</text>
+
+        <!-- 掌握率环 -->
+        <view class="mt-24rpx flex items-center justify-center border-t border-solid border-[#EEEEEE] pt-24rpx">
+          <view class="h-120rpx w-120rpx flex-center rounded-full" :style="{ background: masteryRing }">
+            <view class="h-88rpx w-88rpx flex-center rounded-full bg-white">
+              <text class="text-28rpx font-bold text-[#42B883]">{{ masteryRate }}%</text>
+            </view>
+          </view>
+          <view class="ml-24rpx flex flex-col">
+            <text class="text-26rpx font-bold text-[#3C3C43]">掌握率</text>
+            <text class="mt-8rpx text-22rpx text-[#67676C]">
+              {{ stats.mastery.mastered }}/{{ stats.total }} 条已掌握
+            </text>
+          </view>
         </view>
       </view>
 
       <!-- 近 7 天趋势 -->
-      <view class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx">
+      <view class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx shadow-[0_4rpx_24rpx_rgba(62,99,221,0.06)]">
         <text class="text-28rpx font-bold text-[#3C3C43]">近 7 天新增</text>
         <view class="mt-24rpx flex h-200rpx items-end justify-between">
           <view v-for="(day, index) in trendDays" :key="index" class="flex flex-1 flex-col items-center">
@@ -137,6 +154,11 @@ const trendDays = computed(() => {
     };
   });
 });
+
+const masteryRate = computed(() => (stats.total ? Math.round((stats.mastery.mastered / stats.total) * 100) : 0));
+const masteryRing = computed(
+  () => `conic-gradient(#42B883 0% ${masteryRate.value}%, #EEEEEE ${masteryRate.value}% 100%)`,
+);
 
 const loadStats = async () => {
   try {

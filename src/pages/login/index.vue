@@ -32,12 +32,21 @@
 </template>
 
 <script lang="ts" setup>
+import { onShow } from "@dcloudio/uni-app";
 import { useUserStore } from "@/store/modules/user";
 
 const userStore = useUserStore();
 const isLogin = ref(true);
 const username = ref("");
 const password = ref("");
+
+onShow(() => {
+  // 首启引导只看一次，之后进登录
+  if (!uni.getStorageSync("pass_scroll_onboarded_v1")) {
+    uni.reLaunch({ url: "/pages/onboarding/index" });
+    return;
+  }
+});
 
 const handleSubmit = async () => {
   if (!username.value || !password.value) {

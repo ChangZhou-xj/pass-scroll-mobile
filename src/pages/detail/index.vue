@@ -1,8 +1,11 @@
 <template>
   <view class="min-h-screen bg-[#F7F8FA] pb-120rpx">
     <!-- 正文卡片 -->
-    <view v-if="record" class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx">
+    <view
+      v-if="record"
+      class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx shadow-[0_4rpx_24rpx_rgba(62,99,221,0.06)]">
       <text class="note-title block text-44rpx font-bold text-[#3C3C43]">{{ record.title }}</text>
+      <view class="mt-16rpx h-6rpx w-64rpx rounded-3rpx bg-[#3E63DD]" />
 
       <!-- meta：标签 + 更新时间 -->
       <view class="mt-20rpx flex items-start justify-between">

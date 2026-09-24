@@ -1,5 +1,5 @@
 <template>
-  <view class="rounded-24rpx bg-white p-30rpx mb-24rpx" @click="handleClick">
+  <view class="rounded-24rpx bg-white p-30rpx mb-24rpx shadow-[0_4rpx_24rpx_rgba(62,99,221,0.06)]" @click="handleClick">
     <view class="flex items-center">
       <text v-if="record.isPinned" class="mr-8rpx text-32rpx">📌</text>
       <text class="truncate text-32rpx font-bold text-[#3C3C43]">{{ record.title }}</text>
