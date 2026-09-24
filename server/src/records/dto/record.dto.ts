@@ -1,5 +1,17 @@
 import { Type } from "class-transformer";
-import { ArrayMaxSize, ArrayUnique, IsArray, IsInt, IsOptional, IsString, Length, Max, Min } from "class-validator";
+import {
+  ArrayMaxSize,
+  ArrayUnique,
+  IsArray,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Length,
+  Max,
+  Min,
+} from "class-validator";
+import { Mastery } from "@prisma/client";
 
 export class CreateRecordDto {
   @IsString()
@@ -61,4 +73,9 @@ export class QueryRecordDto {
   @Min(1)
   @Max(100)
   pageSize: number = 20;
+}
+
+export class UpdateMasteryDto {
+  @IsEnum(Mastery, { message: "掌握度取值非法" })
+  to: Mastery;
 }

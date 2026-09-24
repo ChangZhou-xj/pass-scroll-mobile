@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
+import { Mastery, Prisma } from "@prisma/client";
 import { BusinessException } from "../common/exceptions/business.exception";
 import { PrismaService } from "../prisma/prisma.service";
-import { CreateRecordDto, QueryRecordDto, UpdateRecordDto } from "./dto/record.dto";
+import { CreateRecordDto, QueryRecordDto, UpdateMasteryDto, UpdateRecordDto } from "./dto/record.dto";
+import { assertMasteryTransition } from "./mastery-state";
 import { serializeRecord, serializeSnapshot, serializeSnapshotDetail } from "./record.serializer";
 
 export const VERSION_CONFLICT = 10409;
@@ -91,6 +92,18 @@ export class RecordsService {
       where: { id: owned.id },
       // 显式回写 updatedAt，避免 @updatedAt 自动刷新导致置顶改变列表排序
       data: { isPinned: !owned.isPinned, updatedAt: owned.updatedAt },
+      include: { tags: { include: { tag: true } } },
+    });
+    return serializeRecord(row);
+  }
+
+  async setMastery(userId: string, id: string, to: Mastery) {
+    const owned = await this.findOwned(userId, id);
+    assertMasteryTransition(owned.mastery, to);
+    const row = await this.prisma.record.update({
+      where: { id: owned.id },
+      // 显式回写 updatedAt，避免掌握度标记改变列表排序（同 togglePin）
+      data: { mastery: to, updatedAt: owned.updatedAt },
       include: { tags: { include: { tag: true } } },
     });
     return serializeRecord(row);

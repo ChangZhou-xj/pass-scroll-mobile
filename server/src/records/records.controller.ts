@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
-import { CreateRecordDto, QueryRecordDto, UpdateRecordDto } from "./dto/record.dto";
+import { CreateRecordDto, QueryRecordDto, UpdateMasteryDto, UpdateRecordDto } from "./dto/record.dto";
 import { RecordsService } from "./records.service";
 
 @UseGuards(JwtAuthGuard)
@@ -52,5 +52,10 @@ export class RecordsController {
   @Post(":id/pin")
   togglePin(@CurrentUser() user: AuthUser, @Param("id") id: string) {
     return this.records.togglePin(user.userId, id);
+  }
+
+  @Post(":id/mastery")
+  setMastery(@CurrentUser() user: AuthUser, @Param("id") id: string, @Body() dto: UpdateMasteryDto) {
+    return this.records.setMastery(user.userId, id, dto.to);
   }
 }

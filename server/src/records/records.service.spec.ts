@@ -159,4 +159,32 @@ describe("RecordsService", () => {
       expect(ok.version).toBe(2);
     });
   });
+
+  describe("掌握度状态机", () => {
+    it("合法流转全部通过：NONE→LEARNING→MASTERED→LEARNING、NONE→MASTERED、LEARNING→NONE", async () => {
+      const record = await service.create(userId, { title: "A", content: "", tags: [] });
+      expect((await service.setMastery(userId, record.id, "LEARNING")).mastery).toBe("LEARNING");
+      expect((await service.setMastery(userId, record.id, "MASTERED")).mastery).toBe("MASTERED");
+      expect((await service.setMastery(userId, record.id, "LEARNING")).mastery).toBe("LEARNING");
+      const b = await service.create(userId, { title: "B", content: "", tags: [] });
+      expect((await service.setMastery(userId, b.id, "MASTERED")).mastery).toBe("MASTERED");
+      const c = await service.create(userId, { title: "C", content: "", tags: [] });
+      await service.setMastery(userId, c.id, "LEARNING");
+      expect((await service.setMastery(userId, c.id, "NONE")).mastery).toBe("NONE");
+    });
+
+    it("非法流转抛 10002：MASTERED→NONE、自迁移", async () => {
+      const record = await service.create(userId, { title: "A", content: "", tags: [] });
+      await expect(service.setMastery(userId, record.id, "NONE")).rejects.toMatchObject({ businessCode: 10002 });
+      await service.setMastery(userId, record.id, "MASTERED");
+      await expect(service.setMastery(userId, record.id, "NONE")).rejects.toMatchObject({ businessCode: 10002 });
+      await expect(service.setMastery(userId, record.id, "MASTERED")).rejects.toMatchObject({ businessCode: 10002 });
+    });
+
+    it("mastery 变更不刷新 updatedAt", async () => {
+      const record = await service.create(userId, { title: "A", content: "", tags: [] });
+      const marked = await service.setMastery(userId, record.id, "LEARNING");
+      expect(marked.updatedAt).toBe(record.updatedAt);
+    });
+  });
 });
