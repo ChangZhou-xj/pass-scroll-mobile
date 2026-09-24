@@ -40,6 +40,20 @@ function extractTitle(content: string, filename: string): string {
   return (match ? match[1].trim() : path.basename(filename, ".md")).slice(0, 200);
 }
 
+// 目录名 → 标签中文名（与 2026-09-24 e2euser 存量标签中文化保持一致）；未收录的目录名原样保留
+const TAG_NAME_MAP: Record<string, string> = {
+  interview: "面试",
+  algorithm: "算法",
+  sort: "排序",
+  hash: "哈希",
+  "two-pointers": "双指针",
+  "data-structure": "数据结构",
+  entertainment: "游戏",
+  blog: "博客",
+  offline: "离线",
+  bxcx: "组件笔记",
+};
+
 async function main() {
   const { dir, user } = parseArgs();
   const prisma = new PrismaClient();
@@ -55,7 +69,12 @@ async function main() {
     const content = fs.readFileSync(file, "utf-8");
     const title = extractTitle(content, file);
     const rel = path.relative(dir, path.dirname(file));
-    const tags = rel ? rel.split(path.sep).filter(Boolean) : [];
+    const tags = rel
+      ? rel
+          .split(path.sep)
+          .filter(Boolean)
+          .map((name) => TAG_NAME_MAP[name] ?? name)
+      : [];
 
     const exists = await prisma.record.findFirst({ where: { userId: target.id, title }, select: { id: true } });
     if (exists) {
