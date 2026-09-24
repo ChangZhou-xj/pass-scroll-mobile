@@ -1,5 +1,5 @@
 import request from "@/utils/request";
-import type { RecordForm, RecordItem, RecordQuery } from "@/types/record";
+import type { RecordForm, RecordItem, RecordQuery, SnapshotDetail, SnapshotItem } from "@/types/record";
 
 export interface RecordListResult {
   list: RecordItem[];
@@ -36,4 +36,16 @@ export function deleteRecord(id: string): Promise<null> {
 
 export function togglePinRecord(id: string): Promise<RecordItem> {
   return request<RecordItem>({ url: `/records/${id}/pin`, method: "POST" });
+}
+
+export function listSnapshots(id: string): Promise<SnapshotItem[]> {
+  return request<SnapshotItem[]>({ url: `/records/${id}/snapshots` });
+}
+
+export function getSnapshot(id: string, sid: string): Promise<SnapshotDetail> {
+  return request<SnapshotDetail>({ url: `/records/${id}/snapshots/${sid}` });
+}
+
+export function restoreSnapshot(id: string, sid: string): Promise<RecordItem> {
+  return request<RecordItem>({ url: `/records/${id}/snapshots/${sid}/restore`, method: "POST" });
 }

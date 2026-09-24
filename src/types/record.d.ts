@@ -34,3 +34,17 @@ export interface RecordQuery {
   page?: number;
   pageSize?: number;
 }
+
+/** 版本快照列表项（不含正文） */
+export interface SnapshotItem {
+  id: string;
+  version: number;
+  title: string;
+  /** 毫秒时间戳 */
+  createdAt: number;
+}
+
+/** 版本快照详情（含正文） */
+export interface SnapshotDetail extends SnapshotItem {
+  content: string;
+}

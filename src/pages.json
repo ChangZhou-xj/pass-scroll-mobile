@@ -48,6 +48,14 @@
       }
     },
     {
+      "path": "pages/versions/index",
+      "style": {
+        "navigationBarTitleText": "历史版本",
+        "backgroundColor": "#F7F8FA",
+        "backgroundColorBottom": "#F7F8FA"
+      }
+    },
+    {
       "path": "pages/editor/index",
       "style": {
         "navigationBarTitleText": "编辑"

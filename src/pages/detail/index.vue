@@ -40,6 +40,9 @@
         <view class="flex-1 flex-center border-l border-solid border-[#EEEEEE]" @click="handleEdit">
           <text class="text-28rpx text-[#3C3C43]">编辑</text>
         </view>
+        <view class="flex-1 flex-center border-l border-solid border-[#EEEEEE]" @click="handleHistory">
+          <text class="text-28rpx text-[#3C3C43]">历史</text>
+        </view>
         <view class="flex-1 flex-center border-l border-solid border-[#EEEEEE]" @click="handleDelete">
           <text class="text-28rpx text-[#D9303E]">删除</text>
         </view>
@@ -112,6 +115,11 @@ const handleTogglePin = async () => {
 const handleEdit = () => {
   if (!record.value) return;
   uni.navigateTo({ url: `/pages/editor/index?id=${record.value.id}` });
+};
+
+const handleHistory = () => {
+  if (!record.value) return;
+  uni.navigateTo({ url: `/pages/versions/index?id=${record.value.id}` });
 };
 
 const handleDelete = () => {
