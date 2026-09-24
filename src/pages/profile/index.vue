@@ -33,8 +33,7 @@
             <text class="mb-8rpx text-20rpx text-[#67676C]">{{ day.count || "" }}</text>
             <view
               class="w-32rpx rounded-t-8rpx"
-              :class="day.count ? 'bg-[#3E63DD]' : 'bg-[#EEEEEE]'"
-              :style="{ height: day.height + 'rpx' }" />
+              :style="{ height: day.height + 'rpx', background: day.count ? '#3E63DD' : '#EEEEEE' }" />
             <text class="mt-8rpx text-20rpx text-[#67676C]">{{ day.label }}</text>
           </view>
         </view>

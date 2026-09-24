@@ -9,7 +9,7 @@
           <text
             v-if="current.mastery !== 'NONE'"
             class="ml-12rpx shrink-0 text-20rpx"
-            :class="current.mastery === 'MASTERED' ? 'text-[#42B883]' : 'text-[#F0B429]'">
+            :style="{ color: current.mastery === 'MASTERED' ? '#42B883' : '#F0B429' }">
             {{ current.mastery === "MASTERED" ? "已掌握" : "复习中" }}
           </text>
         </view>

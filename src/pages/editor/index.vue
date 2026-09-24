@@ -1,18 +1,18 @@
 <template>
   <view class="min-h-screen bg-[#F7F8FA] pb-160rpx">
-    <!-- 编辑/预览切换 -->
+    <!-- 编辑/预览切换（颜色走 :style：动态 class 中的 arbitrary value 不会被 transformerClass 转换） -->
     <view class="mx-30rpx mt-24rpx flex h-64rpx rounded-32rpx bg-[#EEEEEE] p-4rpx">
       <view
         class="flex-1 flex-center rounded-28rpx"
-        :class="mode === 'edit' ? 'bg-[#3E63DD]' : ''"
+        :style="{ background: mode === 'edit' ? '#3E63DD' : 'transparent' }"
         @click="mode = 'edit'">
-        <text class="text-26rpx" :class="mode === 'edit' ? 'text-white' : 'text-[#67676C]'">编辑</text>
+        <text class="text-26rpx" :style="{ color: mode === 'edit' ? '#FFFFFF' : '#67676C' }">编辑</text>
       </view>
       <view
         class="flex-1 flex-center rounded-28rpx"
-        :class="mode === 'preview' ? 'bg-[#3E63DD]' : ''"
+        :style="{ background: mode === 'preview' ? '#3E63DD' : 'transparent' }"
         @click="mode = 'preview'">
-        <text class="text-26rpx" :class="mode === 'preview' ? 'text-white' : 'text-[#67676C]'">预览</text>
+        <text class="text-26rpx" :style="{ color: mode === 'preview' ? '#FFFFFF' : '#67676C' }">预览</text>
       </view>
     </view>
 

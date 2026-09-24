@@ -18,33 +18,19 @@
       </view>
     </view>
 
-    <!-- 标签筛选栏（选中/未选中分两份静态类：transformerClass 不转换 :class 中的 arbitrary value） -->
+    <!-- 标签筛选栏：尺寸走 unocss class，颜色走 :style（transformerClass 不转换动态 class 中的 arbitrary value） -->
     <scroll-view scroll-x :show-scrollbar="false" class="mt-24rpx">
       <view class="flex">
+        <view :class="chipClass" :style="chipStyle(recordStore.activeTag === '')" @click="selectTag('')">全部</view>
         <view
-          v-if="recordStore.activeTag === ''"
-          class="mr-16rpx rounded-32rpx bg-[#3E63DD] px-28rpx py-10rpx text-24rpx text-white">
-          全部
+          v-for="tag in recordStore.allTags"
+          :key="tag"
+          :class="chipClass"
+          :style="chipStyle(recordStore.activeTag === tag)"
+          @click="selectTag(tag)">
+          <text :style="{ color: recordStore.activeTag === tag ? '#FFFFFF' : '#3E63DD' }">#</text>
+          {{ tag }}
         </view>
-        <view
-          v-else
-          class="mr-16rpx rounded-32rpx bg-white px-28rpx py-10rpx text-24rpx text-[#67676C]"
-          @click="selectTag('')">
-          全部
-        </view>
-        <template v-for="tag in recordStore.allTags" :key="tag">
-          <view
-            v-if="recordStore.activeTag === tag"
-            class="mr-16rpx rounded-32rpx bg-[#3E63DD] px-28rpx py-10rpx text-24rpx text-white">
-            {{ tag }}
-          </view>
-          <view
-            v-else
-            class="mr-16rpx rounded-32rpx bg-white px-28rpx py-10rpx text-24rpx text-[#67676C]"
-            @click="selectTag(tag)">
-            {{ tag }}
-          </view>
-        </template>
       </view>
     </scroll-view>
 
@@ -113,6 +99,13 @@ const selectTag = (tag: string) => {
   recordStore.activeTag = tag;
   recordStore.fetchList();
 };
+
+// chips 布局类全状态一致；颜色必须走 :style——unocss-preset-weapp 的 transformerClass
+// 只转换模板静态 class 属性中的 arbitrary value，动态 :class 字符串不会生成对应 CSS
+const chipClass = "mr-16rpx rounded-32rpx px-28rpx py-10rpx text-24rpx";
+
+const chipStyle = (active: boolean) =>
+  active ? "background: #3E63DD; color: #FFFFFF;" : "background: #FFFFFF; color: #67676C;";
 
 const goDetail = (record: RecordItem) => {
   uni.navigateTo({ url: `/pages/detail/index?id=${record.id}` });
