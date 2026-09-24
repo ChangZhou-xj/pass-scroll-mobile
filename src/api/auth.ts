@@ -1,3 +1,8 @@
+/**
+ * 认证 API 层。login/register 标 auth:false——它们是"获取 token"的请求，
+ * 本身不带 token；且它们的 401（密码错误）只 toast 文案，不触发强制跳登录
+ * （与 request.ts 的 401 分支配合）。changePassword 不标——必须带 token。
+ */
 import request from "@/utils/request";
 
 export interface AuthUserInfo {

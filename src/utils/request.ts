@@ -1,3 +1,15 @@
+/**
+ * request.ts——前端唯一网络出口（所有 API 调用都经它发 uni.request）
+ *
+ * 与后端的约定（对应 server 的 TransformInterceptor / HttpExceptionFilter）：
+ *   - 成功：HTTP 2xx 且 body.code === 0 → resolve(body.data)
+ *   - 业务失败：HTTP 200 但 body.code ≠ 0（如 10001/10409）→ toast 提示 + reject(body)
+ *     （页面 catch 里可读到 body.code 做特殊处理，如编辑器的乐观锁恢复）
+ *   - 401：守卫判定未登录/过期 → 清 token、重置用户态、强制 reLaunch 登录页
+ *     （auth:false 的登录/注册请求除外——密码错的 401 只 toast 文案）
+ *   - 网络异常：toast "网络异常，请稍后重试"
+ * 页面里写 try/catch 时 catch 通常留空即可——提示已经在这里统一弹过了。
+ */
 /** 后端统一响应结构 */
 export interface ApiResponse<T> {
   code: number;

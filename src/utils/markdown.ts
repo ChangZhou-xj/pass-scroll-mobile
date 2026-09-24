@@ -1,3 +1,13 @@
+/**
+ * markdown 渲染管线——把笔记的 markdown 原文转成 uni-app rich-text 能吃的 HTML
+ *
+ * 三段流水线：
+ *   1. parseNote 按 ::: 围栏把原文切成"普通段"与"容器段"（tip/warning/danger/details）
+ *   2. 每段经 marked.parse 转 HTML
+ *   3. injectStyles 给标签注入内联样式（rich-text 组件只认 inline style，不认 class/外部 CSS），
+ *      再用 adaptUnits 把 style 属性里的 rpx 换算成 px（仅 H5 需要）
+ * 消费方：详情页/复习页/版本预览页/编辑器预览（segments → v-for 渲染）。
+ */
 import { marked } from "marked";
 
 export type ContainerKind = "tip" | "warning" | "danger" | "details";

@@ -1,3 +1,11 @@
+/**
+ * 用户 store——登录态的前端载体
+ *
+ * - token 持久化在 storage（"token"），应用重启仍在；userInfo 只在内存（首字符头像用）
+ * - login/register 成功后 token+userInfo 一并落地（applyAuth）
+ * - logout：清 token、清内存态、清笔记缓存（缓存按用户隔离，防止下一个账号看到上一个的数据）
+ * - resetAuthState：401 强制登出时由 request.ts 动态导入调用（避免循环依赖）
+ */
 //  src/store/modules/user.ts
 import { defineStore } from "pinia";
 import AuthAPI, { AuthResult, AuthUserInfo } from "@/api/auth";

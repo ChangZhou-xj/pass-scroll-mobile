@@ -1,6 +1,11 @@
 /** 掌握度（与后端 Mastery 枚举一致） */
 export type Mastery = "NONE" | "LEARNING" | "MASTERED";
 
+/**
+ * 前后端共享的数据契约（TypeScript 类型）——与后端 server/src/records/record.serializer.ts
+ * 的输出一一对应。后端改了返回结构，这里必须同步改（编译器会帮你找出所有受影响的地方）。
+ */
+
 /** 记录条目（与后端 record.serializer 输出一致） */
 export interface RecordItem {
   id: string;

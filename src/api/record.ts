@@ -1,3 +1,8 @@
+/**
+ * 笔记 API 层——每个函数对应后端 records.controller.ts 的一个路由
+ * （路径与方法一一对应，后端注释里有完整路由表）。返回类型 RecordItem 等与
+ * 后端 record.serializer.ts 的输出一一对应（见 src/types/record.d.ts）。
+ */
 import request from "@/utils/request";
 import type {
   Mastery,

@@ -1,3 +1,16 @@
+/**
+ * 笔记 store（Pinia）——笔记列表的前端单一数据源
+ *
+ * 职责：
+ *   - records/total：列表数据（首页/复习页/详情页共享，改一处全联动）
+ *   - keyword/activeTag：首页搜索与标签筛选条件（fetchList 会带上）
+ *   - 本地缓存策略：init 先读 storage 缓存（离线可看、冷启动秒开），
+ *     fetchList 成功后覆盖并回写缓存；失败保留缓存（request.ts 已 toast）
+ *   - 所有变更动作（增删改/置顶/掌握度）成功后都重新 fetchList 保持视图一致
+ *
+ * 注意：本项目 setup store 的 state 在页面侧类型层不解包（既有基线），
+ * 页面通过 RecordStoreProxy 的 unknown 转换消费（见各页面顶部注释）。
+ */
 // src/store/record.ts
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
