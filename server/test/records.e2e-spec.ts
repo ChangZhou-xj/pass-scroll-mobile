@@ -89,4 +89,28 @@ describe("Records (e2e)", () => {
     await authed(tokenB).patch(`/records/${id}`).send({ title: "hack" }).expect(404);
     await authed(tokenB).delete(`/records/${id}`).expect(404);
   });
+
+  it("快照接口全链路：更新→列表→详情→恢复", async () => {
+    const created = await authed(tokenA).post("/records").send({ title: "A", content: "v1", tags: [] }).expect(201);
+    const id = created.body.data.id;
+    await authed(tokenA).patch(`/records/${id}`).send({ content: "v2" }).expect(200);
+    const list = await authed(tokenA).get(`/records/${id}/snapshots`).expect(200);
+    expect(list.body.data).toHaveLength(1);
+    expect(list.body.data[0].content).toBeUndefined();
+    const sid = list.body.data[0].id;
+    const detail = await authed(tokenA).get(`/records/${id}/snapshots/${sid}`).expect(200);
+    expect(detail.body.data.content).toBe("v1");
+    const restored = await authed(tokenA).post(`/records/${id}/snapshots/${sid}/restore`).expect(201);
+    expect(restored.body.data.content).toBe("v1");
+    expect(restored.body.data.version).toBe(3);
+    // 他人不可见
+    await authed(tokenB).get(`/records/${id}/snapshots`).expect(404);
+  });
+
+  it("expectedVersion 冲突返回业务码 10409（HTTP 200）", async () => {
+    const created = await authed(tokenA).post("/records").send({ title: "A", content: "v1", tags: [] }).expect(201);
+    const id = created.body.data.id;
+    const res = await authed(tokenA).patch(`/records/${id}`).send({ content: "v2", expectedVersion: 99 }).expect(200);
+    expect(res.body.code).toBe(10409);
+  });
 });

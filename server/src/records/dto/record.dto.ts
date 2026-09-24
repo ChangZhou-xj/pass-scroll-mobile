@@ -32,6 +32,12 @@ export class UpdateRecordDto {
   @ArrayMaxSize(10)
   @IsString({ each: true })
   tags?: string[];
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  expectedVersion?: number;
 }
 
 export class QueryRecordDto {

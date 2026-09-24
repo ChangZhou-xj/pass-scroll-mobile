@@ -1,8 +1,11 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
+import { BusinessException } from "../common/exceptions/business.exception";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateRecordDto, QueryRecordDto, UpdateRecordDto } from "./dto/record.dto";
-import { serializeRecord } from "./record.serializer";
+import { serializeRecord, serializeSnapshot, serializeSnapshotDetail } from "./record.serializer";
+
+export const VERSION_CONFLICT = 10409;
 
 @Injectable()
 export class RecordsService {
@@ -52,17 +55,27 @@ export class RecordsService {
   }
 
   async update(userId: string, id: string, dto: UpdateRecordDto) {
-    await this.findOwned(userId, id);
+    const owned = await this.findOwned(userId, id);
+    if (dto.expectedVersion !== undefined && dto.expectedVersion !== owned.version) {
+      throw new BusinessException(VERSION_CONFLICT, "笔记已在其他设备修改，请刷新后重试");
+    }
+    const contentChanged =
+      (dto.title !== undefined && dto.title !== owned.title) ||
+      (dto.content !== undefined && dto.content !== owned.content);
     const data: Prisma.RecordUncheckedUpdateInput = {};
     if (dto.title !== undefined) data.title = dto.title;
     if (dto.content !== undefined) data.content = dto.content;
     if (dto.tags !== undefined) {
       data.tags = { deleteMany: {}, create: this.tagConnections(userId, dto.tags) };
     }
-    const row = await this.prisma.record.update({
-      where: { id },
-      data,
-      include: { tags: { include: { tag: true } } },
+    if (contentChanged) data.version = owned.version + 1;
+    const row = await this.prisma.$transaction(async (tx) => {
+      if (contentChanged) {
+        await tx.recordSnapshot.create({
+          data: { recordId: owned.id, version: owned.version, title: owned.title, content: owned.content },
+        });
+      }
+      return tx.record.update({ where: { id }, data, include: { tags: { include: { tag: true } } } });
     });
     return serializeRecord(row);
   }
@@ -79,6 +92,39 @@ export class RecordsService {
       // 显式回写 updatedAt，避免 @updatedAt 自动刷新导致置顶改变列表排序
       data: { isPinned: !owned.isPinned, updatedAt: owned.updatedAt },
       include: { tags: { include: { tag: true } } },
+    });
+    return serializeRecord(row);
+  }
+
+  async snapshots(userId: string, id: string) {
+    await this.findOwned(userId, id);
+    const rows = await this.prisma.recordSnapshot.findMany({
+      where: { recordId: id },
+      orderBy: { version: "desc" },
+    });
+    return rows.map(serializeSnapshot);
+  }
+
+  async snapshot(userId: string, id: string, sid: string) {
+    await this.findOwned(userId, id);
+    const row = await this.prisma.recordSnapshot.findFirst({ where: { id: sid, recordId: id } });
+    if (!row) throw new NotFoundException("版本快照不存在");
+    return serializeSnapshotDetail(row);
+  }
+
+  async restoreSnapshot(userId: string, id: string, sid: string) {
+    const owned = await this.findOwned(userId, id);
+    const snap = await this.prisma.recordSnapshot.findFirst({ where: { id: sid, recordId: id } });
+    if (!snap) throw new NotFoundException("版本快照不存在");
+    const row = await this.prisma.$transaction(async (tx) => {
+      await tx.recordSnapshot.create({
+        data: { recordId: owned.id, version: owned.version, title: owned.title, content: owned.content },
+      });
+      return tx.record.update({
+        where: { id },
+        data: { title: snap.title, content: snap.content, version: owned.version + 1 },
+        include: { tags: { include: { tag: true } } },
+      });
     });
     return serializeRecord(row);
   }

@@ -108,4 +108,55 @@ describe("RecordsService", () => {
     const { total } = await service.list(userId, { page: 1, pageSize: 20 });
     expect(total).toBe(0);
   });
+
+  describe("版本快照与乐观锁", () => {
+    it("内容变化时留存修改前快照且 version+1；tags-only 变化不留存", async () => {
+      const record = await service.create(userId, { title: "A", content: "旧", tags: ["x"] });
+      const updated = await service.update(userId, record.id, { content: "新" });
+      expect(updated.version).toBe(2);
+      const snaps = await service.snapshots(userId, record.id);
+      expect(snaps).toHaveLength(1);
+      expect(snaps[0]).toMatchObject({ version: 1, title: "A" });
+      await service.update(userId, record.id, { tags: ["y"] });
+      const after = await service.snapshots(userId, record.id);
+      expect(after).toHaveLength(1);
+    });
+
+    it("togglePin 不留存快照", async () => {
+      const record = await service.create(userId, { title: "A", content: "", tags: [] });
+      await service.togglePin(userId, record.id);
+      expect(await service.snapshots(userId, record.id)).toHaveLength(0);
+    });
+
+    it("snapshot 详情含 content；他人/错配 sid 返回 404", async () => {
+      const record = await service.create(userId, { title: "A", content: "旧", tags: [] });
+      await service.update(userId, record.id, { content: "新" });
+      const snaps = await service.snapshots(userId, record.id);
+      const detail = await service.snapshot(userId, record.id, snaps[0].id);
+      expect(detail.content).toBe("旧");
+      const otherId = await createOtherUser();
+      await expect(service.snapshot(otherId, record.id, snaps[0].id)).rejects.toMatchObject({ status: 404 });
+      await expect(service.snapshot(userId, record.id, "no-such")).rejects.toMatchObject({ status: 404 });
+    });
+
+    it("恢复：当前内容先存为快照，再写回旧内容且 version+1", async () => {
+      const record = await service.create(userId, { title: "A", content: "v1", tags: [] });
+      await service.update(userId, record.id, { content: "v2" });
+      const snaps = await service.snapshots(userId, record.id);
+      const restored = await service.restoreSnapshot(userId, record.id, snaps[0].id);
+      expect(restored.content).toBe("v1");
+      expect(restored.version).toBe(3);
+      const after = await service.snapshots(userId, record.id);
+      expect(after[0].version).toBe(2); // 恢复前的 v2 成为最新快照（降序第一）
+    });
+
+    it("expectedVersion 不匹配抛 10409；不带则跳过校验", async () => {
+      const record = await service.create(userId, { title: "A", content: "v1", tags: [] });
+      await expect(service.update(userId, record.id, { content: "v2", expectedVersion: 99 })).rejects.toMatchObject({
+        businessCode: 10409,
+      });
+      const ok = await service.update(userId, record.id, { content: "v2" });
+      expect(ok.version).toBe(2);
+    });
+  });
 });

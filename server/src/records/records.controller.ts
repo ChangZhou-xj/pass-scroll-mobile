@@ -19,6 +19,21 @@ export class RecordsController {
     return this.records.detail(user.userId, id);
   }
 
+  @Get(":id/snapshots")
+  snapshots(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.records.snapshots(user.userId, id);
+  }
+
+  @Get(":id/snapshots/:sid")
+  snapshot(@CurrentUser() user: AuthUser, @Param("id") id: string, @Param("sid") sid: string) {
+    return this.records.snapshot(user.userId, id, sid);
+  }
+
+  @Post(":id/snapshots/:sid/restore")
+  restoreSnapshot(@CurrentUser() user: AuthUser, @Param("id") id: string, @Param("sid") sid: string) {
+    return this.records.restoreSnapshot(user.userId, id, sid);
+  }
+
   @Post()
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateRecordDto) {
     return this.records.create(user.userId, dto);
