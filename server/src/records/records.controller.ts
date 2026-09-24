@@ -1,3 +1,25 @@
+/**
+ * RecordsController——笔记相关全部接口（/records/*）
+ *
+ * 类上 @UseGuards(JwtAuthGuard)：这个控制器的【所有】接口都要求登录，
+ * 未带/过期 token 一律 401（前端收到后强制跳登录页）。
+ *
+ * 每个方法的第一参数都是 @CurrentUser() user——"这条数据是谁的"全部从 token 里取，
+ * 绝不信任前端传的用户 id（防越权）。userId 一路传到 service 做数据归属校验（findOwned）。
+ *
+ * REST 风格速览：
+ *   GET    /records            列表（keyword/tag/分页，参数在 query）
+ *   GET    /records/stats      统计（"我的"页）——必须注册在 @Get(":id") 之前，
+ *                              否则 "stats" 会被 :id 当成一个记录 id 匹配走（同段数路由按声明顺序匹配）
+ *   GET    /records/:id        单条详情
+ *   POST   /records            新建
+ *   PATCH  /records/:id        修改（部分更新，可带乐观锁 expectedVersion）
+ *   DELETE /records/:id        删除
+ *   POST   /records/:id/pin    置顶切换
+ *   POST   /records/:id/mastery 掌握度标记（状态机校验）
+ *   GET    /records/:id/snapshots[/:sid]  历史版本列表/详情
+ *   POST   /records/:id/snapshots/:sid/restore  恢复旧版本
+ */
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";

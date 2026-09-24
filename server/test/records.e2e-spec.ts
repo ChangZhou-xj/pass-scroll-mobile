@@ -1,3 +1,5 @@
+// Records e2e 测试——笔记接口的 HTTP 层验证（机制说明见 app.e2e-spec.ts 头注）。
+// 每个用例前注册 alice/bob 两个用户拿到各自 token，"越权访问返回 404/拒绝"用 bob 验证。
 import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";

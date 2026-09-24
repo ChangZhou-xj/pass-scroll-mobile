@@ -1,38 +1,54 @@
+// 数据库结构定义（Prisma Schema）——整个后端的数据"地基图"
+//
+// 这个文件描述：有哪些表、每张表有哪些字段、表之间怎么关联。
+// 改完它之后执行 npm run prisma:migrate -- --name <迁移名> 会生成 SQL 迁移并应用到数据库；
+// 同时 Prisma 会重新生成 TypeScript 客户端（service 里 this.prisma.record.xxx 就来自这里）。
+//
+// 常用语法速查：
+//   @id              主键            @default(cuid())  默认值（cuid=分布式唯一字符串 id）
+//   @unique          唯一约束         @updatedAt        每次 UPDATE 自动刷成当前时间
+//   @relation(...)   外键关联         onDelete: Cascade  父行删除时子行跟着删
+//   @@index([a, b])  联合索引（加速查询）@@unique([a, b])  联合唯一约束
+//   @db.VarChar(200) 指定 MySQL 物理类型（默认 String 会变 TEXT，标题这类短文本要限长）
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL") // 连接串在 server/.env（便携版 MySQL，127.0.0.1:3307）
 }
 
+// 用户表：账号体系的最小集——用户名 + bcrypt 加密后的密码
 model User {
   id        String   @id @default(cuid())
-  username  String   @unique
-  password  String
+  username  String   @unique // 登录账号，全库唯一
+  password  String // 存的是 bcrypt 哈希，永不存明文（见 auth/password-policy.ts）
   createdAt DateTime @default(now())
-  records   Record[]
-  tags      Tag[]
+  records   Record[] // 一对多：一个用户拥有多条笔记（虚拟字段，不占用数据库列）
+  tags      Tag[]    // 一对多：标签按用户隔离，A 的"面试"和 B 的"面试"是两行
 }
 
+// 笔记表：本项目的核心数据。标题 + markdown 正文
 model Record {
   id        String      @id @default(cuid())
   title     String      @db.VarChar(200)
-  content   String      @db.Text
+  content   String      @db.Text // markdown 原文（含 ::: 容器语法，前端负责渲染）
   isPinned  Boolean     @default(false)
   createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  updatedAt DateTime    @updatedAt // 列表按它倒序排；置顶/标掌握度时会显式回写旧值防止顶到最前
   userId    String
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  version   Int              @default(1)
-  mastery   Mastery          @default(NONE)
-  snapshots RecordSnapshot[]
-  tags      RecordTag[]
+  version   Int         @default(1) // 内容版本号：每次改标题/正文 +1，乐观锁与快照都靠它
+  mastery   Mastery     @default(NONE) // 掌握度（见下方 enum 与 records/mastery-state.ts 状态机）
+  snapshots RecordSnapshot[] // 一对多：每次内容变更前的"修改前快照"
+  tags      RecordTag[] // 多对多桥接：一条笔记可挂多个标签
 
-  @@index([userId, updatedAt])
+  @@index([userId, updatedAt]) // 列表页查询（某用户、按更新时间倒序）走这个索引
 }
 
+// 标签表：标签属于用户（@@unique([userId, name]) 保证同一用户内不重名）
 model Tag {
   id      String      @id @default(cuid())
   name    String
@@ -43,6 +59,7 @@ model Tag {
   @@unique([userId, name])
 }
 
+// 笔记 ↔ 标签 的多对多桥接表（联合主键天然防重复绑定）
 model RecordTag {
   recordId String
   tagId    String
@@ -52,20 +69,23 @@ model RecordTag {
   @@id([recordId, tagId])
 }
 
+// 掌握度枚举：未掌握 → 复习中 → 已掌握（合法流转见 records/mastery-state.ts）
 enum Mastery {
   NONE
   LEARNING
   MASTERED
 }
 
+// 版本快照表：笔记每次内容变更前，把"修改前"的标题/正文/version 存一行
+// ——历史版本回溯与"恢复旧版本"的数据来源
 model RecordSnapshot {
   id        String   @id @default(cuid())
   recordId  String
   record    Record   @relation(fields: [recordId], references: [id], onDelete: Cascade)
-  version   Int
+  version   Int // 快照当时的 Record.version
   title     String   @db.VarChar(200)
   content   String   @db.Text
   createdAt DateTime @default(now())
 
-  @@unique([recordId, version])
+  @@unique([recordId, version]) // 同一笔记同一版本号只许一行：并发写入时把静默重复变成响失败
 }

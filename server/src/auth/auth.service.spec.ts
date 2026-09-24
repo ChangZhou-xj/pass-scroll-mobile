@@ -1,3 +1,6 @@
+// AuthService 集成测试——直接调 service 方法、打真实的测试数据库（pass_scroll_test）。
+// 与 e2e 测试的分工：这里不经过 HTTP，专测业务逻辑（哈希、业务码、状态流转）；
+// beforeEach 清空全库，保证每个用例独立。运行：cd server && npm test
 import { Test } from "@nestjs/testing";
 import { JwtService } from "@nestjs/jwt";
 import { AuthModule } from "./auth.module";

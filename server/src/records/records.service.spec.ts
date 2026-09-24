@@ -1,3 +1,5 @@
+// RecordsService 集成测试——直接调 service 打真实测试库（机制说明见 auth.service.spec.ts 头注）。
+// 覆盖：CRUD、排序不变量、归属 404、版本快照留存/恢复、乐观锁 10409、掌握度状态机、stats 聚合。
 import { Test } from "@nestjs/testing";
 import { PrismaService } from "../prisma/prisma.service";
 import { resetDatabase } from "../../test/reset-db";

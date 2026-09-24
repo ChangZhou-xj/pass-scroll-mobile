@@ -1,3 +1,13 @@
+/**
+ * 一次性迁移脚本：把本地 markdown 笔记目录批量导入数据库
+ *
+ * 用法：cd server && npm run import:md -- --dir <docs目录> --user <用户名>
+ * 规则：
+ *   - 递归找 .md 文件（跳过 . 开头目录与 node_modules）
+ *   - 标题取文内第一个 H1（# 开头行），没有则用文件名
+ *   - 所在相对目录的每一级都变成一个标签（目录名经 TAG_NAME_MAP 转中文）
+ *   - 同一用户下按标题判重，已存在则跳过（重复执行安全）
+ */
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import * as fs from "fs";

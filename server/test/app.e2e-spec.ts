@@ -1,3 +1,6 @@
+// App e2e 测试——把完整 Nest 应用拉起来，用 supertest 发真实 HTTP 请求打测试库。
+// 与集成测试的分工：这里验证"HTTP 层"行为——状态码、统一响应包装 {code,message,data}、守卫 401、
+// 改密全链路。运行：cd server && npm run test:e2e（maxWorkers:1，与集成测试共享测试库，必须串行）
 import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
