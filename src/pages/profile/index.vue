@@ -34,7 +34,7 @@
             <view
               class="w-32rpx rounded-t-8rpx"
               :class="day.count ? 'bg-[#3E63DD]' : 'bg-[#EEEEEE]'"
-              :style="{ height: day.height + 'px' }" />
+              :style="{ height: day.height + 'rpx' }" />
             <text class="mt-8rpx text-20rpx text-[#67676C]">{{ day.label }}</text>
           </view>
         </view>
@@ -132,8 +132,8 @@ const trendDays = computed(() => {
     day.setDate(day.getDate() - (6 - i));
     return {
       count,
-      // 满高 160px 约等于 320rpx 容器内视觉上限；0 值给 2px 底线
-      height: count ? Math.max(Math.round((count / max) * 160), 8) : 2,
+      // 满高 140rpx，给柱顶数字与柱底标签留约 56rpx（容器 h-200rpx）；0 值给 4rpx 底线
+      height: count ? Math.max(Math.round((count / max) * 140), 16) : 4,
       label: `${day.getMonth() + 1}/${day.getDate()}`,
     };
   });
