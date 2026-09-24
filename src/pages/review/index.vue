@@ -1,5 +1,5 @@
 <template>
-  <view class="min-h-screen bg-[#F7F8FA] pb-160rpx">
+  <view class="review-page min-h-screen bg-[#F7F8FA] pb-160rpx">
     <!-- 有当前题 -->
     <template v-if="current">
       <view class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx shadow-[0_4rpx_24rpx_rgba(62,99,221,0.06)]">
@@ -63,7 +63,7 @@
       <!-- 掌握度标记：答案展开后浮现，固定底部双大按钮 -->
       <view
         v-if="showMark"
-        class="fixed bottom-0 left-0 right-0 z-50 border-t border-solid border-[#EEEEEE] bg-white px-30rpx py-16rpx">
+        class="review-mark-bar fixed bottom-0 left-0 right-0 z-50 border-t border-solid border-[#EEEEEE] bg-white px-30rpx py-16rpx">
         <view class="flex">
           <view
             class="mr-20rpx h-96rpx flex-1 flex-center rounded-48rpx border-2rpx border-solid border-[#F0B429] bg-white"
@@ -212,4 +212,16 @@ onShow(async () => {
 .note-title {
   font-family: "STKaiti", "KaiTi", "Kaiti SC", "SimSun", serif;
 }
+
+/* #ifdef H5 */
+/* H5 端 tabBar position:fixed bottom:0 z-index:998，标记栏需上浮避让；
+   style 块禁 rpx，160rpx 按 375 基线换算为 80px */
+.review-mark-bar {
+  bottom: calc(var(--tab-bar-height, 50px) + env(safe-area-inset-bottom));
+}
+
+.review-page {
+  padding-bottom: calc(80px + var(--tab-bar-height, 50px) + env(safe-area-inset-bottom));
+}
+/* #endif */
 </style>
