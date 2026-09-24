@@ -24,3 +24,24 @@ export function truncateText(text: string, maxLength = 100): string {
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength) + "...";
 }
+
+/** markdown 转纯文本（列表摘要用）：剥离语法符号、去掉文首 H1（通常与标题重复） */
+export function plainText(markdown: string): string {
+  return markdown
+    .replace(/^#\s+.*(\n|$)/, "")
+    .replace(/```[\s\S]*?```/g, " [代码] ")
+    .replace(/`([^`]*)`/g, "$1")
+    .replace(/^\s*:::.*$/gm, " ")
+    .replace(/^#{1,6}\s*/gm, "")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "[图片]")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/^\s*>\s?/gm, "")
+    .replace(/^\s*[-*+]\s+/gm, "")
+    .replace(/^\s*\d+\.\s+/gm, "")
+    .replace(/^\s*-{3,}\s*$/gm, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}

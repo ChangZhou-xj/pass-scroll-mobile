@@ -10,7 +10,7 @@
         {{ record.mastery === "MASTERED" ? "已掌握" : "复习中" }}
       </text>
     </view>
-    <text class="line-clamp-2 mt-12rpx text-26rpx text-[#67676C]">{{ record.content }}</text>
+    <text class="line-clamp-2 mt-12rpx text-26rpx text-[#67676C]">{{ summary }}</text>
     <view class="mt-20rpx flex items-start justify-between">
       <view class="flex flex-1 flex-wrap">
         <text
@@ -27,12 +27,14 @@
 
 <script setup lang="ts">
 import type { RecordItem } from "@/types/record";
-import { formatTime } from "@/utils/format";
+import { formatTime, plainText } from "@/utils/format";
 
 const props = defineProps<{ record: RecordItem }>();
 const emit = defineEmits<{
   click: [record: RecordItem];
 }>();
+
+const summary = computed(() => plainText(props.record.content));
 
 const handleClick = () => {
   emit("click", props.record);
