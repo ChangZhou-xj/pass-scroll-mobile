@@ -67,5 +67,5 @@ model RecordSnapshot {
   content   String   @db.Text
   createdAt DateTime @default(now())
 
-  @@index([recordId, version])
+  @@unique([recordId, version])
 }

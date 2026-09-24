@@ -2,7 +2,6 @@ import { Test } from "@nestjs/testing";
 import { JwtService } from "@nestjs/jwt";
 import { AuthModule } from "./auth.module";
 import { AuthService } from "./auth.service";
-import { BusinessException } from "../common/exceptions/business.exception";
 import { PrismaModule } from "../prisma/prisma.module";
 import { PrismaService } from "../prisma/prisma.service";
 import { resetDatabase } from "../../test/reset-db";
