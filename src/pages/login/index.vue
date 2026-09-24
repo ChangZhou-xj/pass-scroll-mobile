@@ -17,7 +17,7 @@
         v-model="password"
         class="h-88rpx w-full rounded-12rpx border border-solid border-[#3C3C43]/20 px-24rpx text-28rpx text-[#3C3C43]"
         password
-        placeholder="请输入密码（6-32位）"
+        :placeholder="isLogin ? '密码' : '8-64位，含字母与数字'"
         placeholder-style="color: #67676C;" />
       <view class="mt-48rpx h-88rpx flex-center rounded-44rpx bg-[#3E63DD]" @click="handleSubmit">
         <text class="text-30rpx text-white">{{ isLogin ? "进入" : "创建账号" }}</text>

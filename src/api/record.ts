@@ -1,5 +1,13 @@
 import request from "@/utils/request";
-import type { Mastery, RecordForm, RecordItem, RecordQuery, SnapshotDetail, SnapshotItem } from "@/types/record";
+import type {
+  Mastery,
+  RecordForm,
+  RecordItem,
+  RecordQuery,
+  RecordStats,
+  SnapshotDetail,
+  SnapshotItem,
+} from "@/types/record";
 
 export interface RecordListResult {
   list: RecordItem[];
@@ -52,4 +60,8 @@ export function getSnapshot(id: string, sid: string): Promise<SnapshotDetail> {
 
 export function restoreSnapshot(id: string, sid: string): Promise<RecordItem> {
   return request<RecordItem>({ url: `/records/${id}/snapshots/${sid}/restore`, method: "POST" });
+}
+
+export function getStats(): Promise<RecordStats> {
+  return request<RecordStats>({ url: "/records/stats" });
 }

@@ -56,6 +56,14 @@
       }
     },
     {
+      "path": "pages/password/index",
+      "style": {
+        "navigationBarTitleText": "修改密码",
+        "backgroundColor": "#F7F8FA",
+        "backgroundColorBottom": "#F7F8FA"
+      }
+    },
+    {
       "path": "pages/editor/index",
       "style": {
         "navigationBarTitleText": "编辑"

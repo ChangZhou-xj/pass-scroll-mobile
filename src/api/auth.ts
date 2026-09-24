@@ -17,6 +17,9 @@ const AuthAPI = {
   register(username: string, password: string): Promise<AuthResult> {
     return request<AuthResult>({ url: "/auth/register", method: "POST", data: { username, password }, auth: false });
   },
+  changePassword(oldPassword: string, newPassword: string): Promise<null> {
+    return request<null>({ url: "/auth/password", method: "POST", data: { oldPassword, newPassword } });
+  },
 };
 
 export default AuthAPI;

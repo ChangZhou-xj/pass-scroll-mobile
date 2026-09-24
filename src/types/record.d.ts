@@ -48,3 +48,17 @@ export interface SnapshotItem {
 export interface SnapshotDetail extends SnapshotItem {
   content: string;
 }
+
+/** 记录统计（GET /records/stats） */
+export interface RecordStats {
+  total: number;
+  tagCount: number;
+  pinnedCount: number;
+  /** 近 7 天每日新增，下标 0 为 6 天前、6 为今日 */
+  trend7d: number[];
+  mastery: {
+    none: number;
+    learning: number;
+    mastered: number;
+  };
+}

@@ -1,0 +1,81 @@
+<template>
+  <view class="min-h-screen bg-[#F7F8FA] pb-160rpx">
+    <!-- 表单卡片 -->
+    <view class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx">
+      <input
+        v-model="oldPassword"
+        class="h-88rpx w-full border-b border-solid border-[#EEEEEE] text-28rpx text-[#3C3C43]"
+        password
+        placeholder="旧密码"
+        placeholder-style="color: #67676C;" />
+      <input
+        v-model="newPassword"
+        class="mt-24rpx h-88rpx w-full border-b border-solid border-[#EEEEEE] text-28rpx text-[#3C3C43]"
+        password
+        placeholder="8-64位，含字母与数字"
+        placeholder-style="color: #67676C;" />
+      <input
+        v-model="confirmPassword"
+        class="mt-24rpx h-88rpx w-full text-28rpx text-[#3C3C43]"
+        password
+        placeholder="确认新密码"
+        placeholder-style="color: #67676C;" />
+    </view>
+
+    <!-- 底部确认按钮 -->
+    <view class="fixed bottom-0 left-0 right-0 border-t border-solid border-[#EEEEEE] bg-white px-30rpx py-16rpx">
+      <view class="h-88rpx flex-center rounded-44rpx bg-[#3E63DD]" @click="handleSubmit">
+        <text class="text-30rpx text-white">确认修改</text>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script setup lang="ts">
+import type { AuthUserInfo } from "@/api/auth";
+import { onLoad } from "@dcloudio/uni-app";
+import AuthAPI from "@/api/auth";
+import { useUserStore } from "@/store/modules/user";
+
+// 本项目 pinia setup store 的 state/computed 在外部类型层未解包（见 user.ts 基线注释），
+// 经 unknown 转换为运行时实际的解包形态，页面内按运行时结构消费。
+type UserStoreProxy = {
+  token: string;
+  userInfo: AuthUserInfo | null;
+  logout: () => void;
+};
+
+const userStore = useUserStore() as unknown as UserStoreProxy;
+
+const oldPassword = ref("");
+const newPassword = ref("");
+const confirmPassword = ref("");
+const submitting = ref(false);
+
+const handleSubmit = async () => {
+  if (submitting.value) return;
+  if (!oldPassword.value || !newPassword.value || !confirmPassword.value) {
+    uni.showToast({ title: "请填写完整", icon: "none" });
+    return;
+  }
+  if (newPassword.value !== confirmPassword.value) {
+    uni.showToast({ title: "两次输入的新密码不一致", icon: "none" });
+    return;
+  }
+  submitting.value = true;
+  try {
+    await AuthAPI.changePassword(oldPassword.value, newPassword.value);
+    uni.showToast({ title: "已修改，请重新登录", icon: "none" });
+    userStore.logout();
+    uni.reLaunch({ url: "/pages/login/index" });
+  } catch {
+    // request.ts 已 toast（10003 旧密码错误 / 10004 强度不足）
+  } finally {
+    submitting.value = false;
+  }
+};
+
+onLoad(() => {
+  uni.setNavigationBarTitle({ title: "修改密码" });
+});
+</script>
