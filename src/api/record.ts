@@ -26,7 +26,7 @@ export function updateRecord(id: string, form: RecordForm): Promise<RecordItem> 
   return request<RecordItem>({
     url: `/records/${id}`,
     method: "PATCH",
-    data: { title: form.title, content: form.content, tags: form.tags },
+    data: { title: form.title, content: form.content, tags: form.tags, expectedVersion: form.expectedVersion },
   });
 }
 

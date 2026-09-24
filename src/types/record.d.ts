@@ -23,6 +23,8 @@ export interface RecordForm {
   title: string;
   content: string;
   tags: string[];
+  /** 编辑时携带的版本号（乐观锁），新建不带 */
+  expectedVersion?: number;
 }
 
 /** 记录列表查询参数 */

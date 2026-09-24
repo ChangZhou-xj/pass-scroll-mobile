@@ -1,7 +1,23 @@
 <template>
   <view class="min-h-screen bg-[#F7F8FA] pb-160rpx">
+    <!-- 编辑/预览切换 -->
+    <view class="mx-30rpx mt-24rpx flex h-64rpx rounded-32rpx bg-[#EEEEEE] p-4rpx">
+      <view
+        class="flex-1 flex-center rounded-28rpx"
+        :class="mode === 'edit' ? 'bg-[#3E63DD]' : ''"
+        @click="mode = 'edit'">
+        <text class="text-26rpx" :class="mode === 'edit' ? 'text-white' : 'text-[#67676C]'">编辑</text>
+      </view>
+      <view
+        class="flex-1 flex-center rounded-28rpx"
+        :class="mode === 'preview' ? 'bg-[#3E63DD]' : ''"
+        @click="mode = 'preview'">
+        <text class="text-26rpx" :class="mode === 'preview' ? 'text-white' : 'text-[#67676C]'">预览</text>
+      </view>
+    </view>
+
     <!-- 表单卡片 -->
-    <view class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx">
+    <view v-if="mode === 'edit'" class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx">
       <!-- 标题 -->
       <input
         v-model="title"
@@ -36,6 +52,29 @@
         @confirm="addTag" />
     </view>
 
+    <!-- 预览卡片 -->
+    <view v-else class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx">
+      <text class="note-title block text-40rpx font-bold text-[#3C3C43]">{{ title.trim() || "未命名" }}</text>
+      <view v-if="tags.length" class="mt-20rpx flex flex-wrap">
+        <text
+          v-for="tag in tags"
+          :key="tag"
+          class="mr-12rpx mb-8rpx rounded-12rpx bg-[#3E63DD]/10 px-16rpx py-4rpx text-22rpx text-[#3E63DD]">
+          {{ tag }}
+        </text>
+      </view>
+      <view class="my-24rpx h-1rpx bg-[#EEEEEE]" />
+      <template v-if="content.trim()">
+        <view v-for="(seg, index) in previewSegments" :key="index">
+          <rich-text v-if="seg.type === 'html'" :nodes="seg.html" />
+          <MdContainer v-else :kind="seg.kind" :title="seg.title" :html="seg.html" />
+        </view>
+      </template>
+      <view v-else class="flex-center py-60rpx">
+        <text class="text-26rpx text-[#67676C]">暂无内容，切回编辑写点什么吧</text>
+      </view>
+    </view>
+
     <!-- 底部保存按钮 -->
     <view class="fixed bottom-0 left-0 right-0 border-t border-solid border-[#EEEEEE] bg-white px-30rpx py-16rpx">
       <view class="h-88rpx flex-center rounded-44rpx bg-[#3E63DD]" @click="handleSave">
@@ -50,6 +89,7 @@ import type { RecordItem } from "@/types/record";
 import { onLoad } from "@dcloudio/uni-app";
 import { getRecord } from "@/api/record";
 import { useRecordStore } from "@/store/record";
+import { parseNote } from "@/utils/markdown";
 
 // 本项目 pinia setup store 的 state/computed 在外部类型层未解包（见首页同模式），
 // 经 unknown 转换为运行时实际的解包形态，页面内按运行时结构消费。
@@ -79,6 +119,10 @@ const tags = ref<string[]>([]);
 const tagInput = ref("");
 const saving = ref(false);
 
+const mode = ref<"edit" | "preview">("edit");
+const version = ref<number>();
+const previewSegments = computed(() => parseNote(content.value));
+
 async function prefill(id: string) {
   const existing = recordStore.getRecordById(id);
   let record: RecordItem | undefined = existing;
@@ -93,6 +137,7 @@ async function prefill(id: string) {
     title.value = record.title;
     content.value = record.content;
     tags.value = [...record.tags];
+    version.value = record.version;
   }
 }
 
@@ -122,14 +167,23 @@ const handleSave = async () => {
   saving.value = true;
   try {
     if (isEdit.value && editId.value) {
-      await recordStore.editRecord({ id: editId.value, title: trimmedTitle, content: content.value, tags: tags.value });
+      await recordStore.editRecord({
+        id: editId.value,
+        title: trimmedTitle,
+        content: content.value,
+        tags: tags.value,
+        expectedVersion: version.value,
+      });
     } else {
       await recordStore.addRecord({ title: trimmedTitle, content: content.value, tags: tags.value });
     }
     uni.showToast({ title: "已保存", icon: "none" });
     uni.navigateBack();
-  } catch {
-    // request.ts 已统一 toast
+  } catch (e) {
+    // 乐观锁冲突：重新拉取最新内容与版本号，用户基于最新版继续编辑
+    if ((e as { code?: number })?.code === 10409 && editId.value) {
+      await prefill(editId.value);
+    }
   } finally {
     saving.value = false;
   }
@@ -144,3 +198,9 @@ onLoad((query) => {
   }
 });
 </script>
+
+<style scoped>
+.note-title {
+  font-family: "STKaiti", "KaiTi", "Kaiti SC", "SimSun", serif;
+}
+</style>
