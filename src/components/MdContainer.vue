@@ -29,6 +29,8 @@ import { ref, computed } from "vue";
 
 const props = defineProps<{ kind: ContainerKind; title: string; html: string }>();
 
+const emit = defineEmits<{ toggle: [open: boolean] }>();
+
 const THEMES: Record<Exclude<ContainerKind, "details">, { color: string; bg: string }> = {
   tip: { color: "#3E63DD", bg: "rgba(62,99,221,0.08)" },
   warning: { color: "#F0B429", bg: "rgba(240,180,41,0.12)" },
@@ -41,5 +43,6 @@ const isOpen = ref(false);
 
 const toggleOpen = () => {
   isOpen.value = !isOpen.value;
+  emit("toggle", isOpen.value);
 };
 </script>

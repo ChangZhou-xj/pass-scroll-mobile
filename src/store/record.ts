@@ -1,8 +1,8 @@
 // src/store/record.ts
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
-import type { RecordForm, RecordItem, RecordQuery } from "@/types/record";
-import { createRecord, deleteRecord, listRecords, togglePinRecord, updateRecord } from "@/api/record";
+import type { Mastery, RecordForm, RecordItem, RecordQuery } from "@/types/record";
+import { createRecord, deleteRecord, listRecords, togglePinRecord, updateMastery, updateRecord } from "@/api/record";
 
 const CACHE_KEY = "pass_scroll_records";
 
@@ -73,6 +73,11 @@ export const useRecordStore = defineStore("record", () => {
     await fetchList();
   }
 
+  async function setMastery(id: string, to: Mastery) {
+    await updateMastery(id, to);
+    await fetchList();
+  }
+
   return {
     records,
     total,
@@ -87,5 +92,6 @@ export const useRecordStore = defineStore("record", () => {
     editRecord,
     removeRecord,
     togglePin,
+    setMastery,
   };
 });

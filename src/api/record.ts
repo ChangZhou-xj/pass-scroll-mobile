@@ -1,5 +1,5 @@
 import request from "@/utils/request";
-import type { RecordForm, RecordItem, RecordQuery, SnapshotDetail, SnapshotItem } from "@/types/record";
+import type { Mastery, RecordForm, RecordItem, RecordQuery, SnapshotDetail, SnapshotItem } from "@/types/record";
 
 export interface RecordListResult {
   list: RecordItem[];
@@ -36,6 +36,10 @@ export function deleteRecord(id: string): Promise<null> {
 
 export function togglePinRecord(id: string): Promise<RecordItem> {
   return request<RecordItem>({ url: `/records/${id}/pin`, method: "POST" });
+}
+
+export function updateMastery(id: string, to: Mastery): Promise<RecordItem> {
+  return request<RecordItem>({ url: `/records/${id}/mastery`, method: "POST", data: { to } });
 }
 
 export function listSnapshots(id: string): Promise<SnapshotItem[]> {

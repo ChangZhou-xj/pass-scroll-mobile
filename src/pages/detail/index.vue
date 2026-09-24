@@ -14,6 +14,12 @@
             {{ tag }}
           </text>
         </view>
+        <text
+          v-if="record.mastery !== 'NONE'"
+          class="ml-12rpx shrink-0 text-20rpx"
+          :class="record.mastery === 'MASTERED' ? 'text-[#42B883]' : 'text-[#F0B429]'">
+          {{ record.mastery === "MASTERED" ? "已掌握" : "复习中" }}
+        </text>
         <text class="ml-16rpx shrink-0 text-22rpx text-[#67676C]">{{ formatTime(record.updatedAt) }}</text>
       </view>
 

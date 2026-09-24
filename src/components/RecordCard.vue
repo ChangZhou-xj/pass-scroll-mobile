@@ -3,6 +3,12 @@
     <view class="flex items-center">
       <text v-if="record.isPinned" class="mr-8rpx text-32rpx">📌</text>
       <text class="truncate text-32rpx font-bold text-[#3C3C43]">{{ record.title }}</text>
+      <text
+        v-if="record.mastery !== 'NONE'"
+        class="ml-12rpx shrink-0 text-20rpx"
+        :class="record.mastery === 'MASTERED' ? 'text-[#42B883]' : 'text-[#F0B429]'">
+        {{ record.mastery === "MASTERED" ? "已掌握" : "复习中" }}
+      </text>
     </view>
     <text class="line-clamp-2 mt-12rpx text-26rpx text-[#67676C]">{{ record.content }}</text>
     <view class="mt-20rpx flex items-start justify-between">
