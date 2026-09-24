@@ -29,7 +29,15 @@ export const useRecordStore = defineStore("record", () => {
   function init() {
     try {
       const cached = uni.getStorageSync(CACHE_KEY);
-      if (cached) records.value = JSON.parse(cached);
+      if (cached) {
+        // 归一化旧版缓存：补齐新增字段，避免徽章误报与首次保存跳过乐观锁
+        const parsed = JSON.parse(cached) as Partial<RecordItem>[];
+        records.value = parsed.map((item) => ({
+          ...item,
+          mastery: item.mastery ?? "NONE",
+          version: item.version ?? 1,
+        })) as RecordItem[];
+      }
     } catch (e) {
       console.error("读取本地存储失败", e);
     }

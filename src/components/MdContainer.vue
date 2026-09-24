@@ -25,7 +25,7 @@
 
 <script setup lang="ts">
 import type { ContainerKind } from "@/utils/markdown";
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 
 const props = defineProps<{ kind: ContainerKind; title: string; html: string }>();
 
@@ -40,6 +40,14 @@ const THEMES: Record<Exclude<ContainerKind, "details">, { color: string; bg: str
 const theme = computed(() => THEMES[props.kind as Exclude<ContainerKind, "details">]);
 
 const isOpen = ref(false);
+
+// 内容切换（复习页/版本页按 index 复用实例）时复位为折叠，避免跨题残留展开态
+watch(
+  () => [props.html, props.title],
+  () => {
+    isOpen.value = false;
+  },
+);
 
 const toggleOpen = () => {
   isOpen.value = !isOpen.value;
