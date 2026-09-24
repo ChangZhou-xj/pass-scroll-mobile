@@ -31,7 +31,14 @@ describe("RecordsService", () => {
 
   it("create 返回序列化记录（tags 为字符串数组，时间为毫秒 number）", async () => {
     const record = await service.create(userId, { title: "第一条", content: "内容", tags: ["面试", "hash"] });
-    expect(record).toMatchObject({ title: "第一条", content: "内容", isPinned: false, tags: ["面试", "hash"] });
+    expect(record).toMatchObject({
+      title: "第一条",
+      content: "内容",
+      isPinned: false,
+      tags: ["面试", "hash"],
+      version: 1,
+      mastery: "NONE",
+    });
     expect(typeof record.createdAt).toBe("number");
     expect(typeof record.updatedAt).toBe("number");
   });

@@ -25,6 +25,9 @@ model Record {
   updatedAt DateTime    @updatedAt
   userId    String
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  version   Int              @default(1)
+  mastery   Mastery          @default(NONE)
+  snapshots RecordSnapshot[]
   tags      RecordTag[]
 
   @@index([userId, updatedAt])
@@ -47,4 +50,22 @@ model RecordTag {
   tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([recordId, tagId])
+}
+
+enum Mastery {
+  NONE
+  LEARNING
+  MASTERED
+}
+
+model RecordSnapshot {
+  id        String   @id @default(cuid())
+  recordId  String
+  record    Record   @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  version   Int
+  title     String   @db.VarChar(200)
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([recordId, version])
 }

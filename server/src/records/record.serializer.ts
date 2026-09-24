@@ -8,6 +8,8 @@ export function serializeRecord(record: RecordWithTags) {
     title: record.title,
     content: record.content,
     isPinned: record.isPinned,
+    version: record.version,
+    mastery: record.mastery,
     tags: record.tags.map((rt) => rt.tag.name),
     createdAt: record.createdAt.getTime(),
     updatedAt: record.updatedAt.getTime(),
