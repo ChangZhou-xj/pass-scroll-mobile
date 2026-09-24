@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { Mastery, Prisma } from "@prisma/client";
 import { BusinessException } from "../common/exceptions/business.exception";
 import { PrismaService } from "../prisma/prisma.service";
-import { CreateRecordDto, QueryRecordDto, UpdateMasteryDto, UpdateRecordDto } from "./dto/record.dto";
+import { CreateRecordDto, QueryRecordDto, UpdateRecordDto } from "./dto/record.dto";
 import { assertMasteryTransition } from "./mastery-state";
 import { serializeRecord, serializeSnapshot, serializeSnapshotDetail } from "./record.serializer";
 
@@ -140,6 +140,45 @@ export class RecordsService {
       });
     });
     return serializeRecord(row);
+  }
+
+  async stats(userId: string) {
+    const [total, pinnedCount, tagCount] = await this.prisma.$transaction([
+      this.prisma.record.count({ where: { userId } }),
+      this.prisma.record.count({ where: { userId, isPinned: true } }),
+      this.prisma.tag.count({ where: { userId } }),
+    ]);
+    // groupBy 单独调用：放进 $transaction 数组会让泛型 T 退化为 RecordGroupByArgs，
+    // 导致结果 _count 被推断为 true | 对象 | undefined
+    const masteryGroups = await this.prisma.record.groupBy({
+      by: ["mastery"],
+      where: { userId },
+      _count: { _all: true },
+      orderBy: { mastery: "asc" },
+    });
+    const mastery = { none: 0, learning: 0, mastered: 0 };
+    for (const group of masteryGroups) {
+      mastery[group.mastery.toLowerCase() as "none" | "learning" | "mastered"] = group._count._all;
+    }
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - 6);
+    // DATE_FORMAT 直接出字符串，避免 MySQL DATE 类型经驱动转成 Date 后的时区歧义（口径：数据库本地日期）
+    const rows = await this.prisma.$queryRaw<{ day: string; cnt: bigint }[]>`
+      SELECT DATE_FORMAT(\`createdAt\`, '%Y-%m-%d') AS day, COUNT(*) AS cnt
+      FROM \`Record\`
+      WHERE \`userId\` = ${userId} AND \`createdAt\` >= ${start}
+      GROUP BY DATE_FORMAT(\`createdAt\`, '%Y-%m-%d')`;
+    const countByDay = new Map(rows.map((row) => [row.day, Number(row.cnt)]));
+    const trend7d: number[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const day = new Date();
+      day.setHours(0, 0, 0, 0);
+      day.setDate(day.getDate() - i);
+      const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+      trend7d.push(countByDay.get(key) ?? 0);
+    }
+    return { total, tagCount, pinnedCount, trend7d, mastery };
   }
 
   private tagConnections(userId: string, tags: string[]) {

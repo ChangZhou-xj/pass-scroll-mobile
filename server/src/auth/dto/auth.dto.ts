@@ -6,7 +6,6 @@ export class RegisterDto {
   username: string;
 
   @IsString()
-  @Length(6, 32, { message: "密码长度需为 6-32 位" })
   password: string;
 }
 
@@ -16,4 +15,12 @@ export class LoginDto {
 
   @IsString()
   password: string;
+}
+
+export class ChangePasswordDto {
+  @IsString()
+  oldPassword: string;
+
+  @IsString()
+  newPassword: string;
 }

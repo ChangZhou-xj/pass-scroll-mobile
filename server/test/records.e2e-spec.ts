@@ -36,7 +36,7 @@ describe("Records (e2e)", () => {
   async function registerAndGetToken(username: string): Promise<string> {
     const res = await request(app.getHttpServer())
       .post("/auth/register")
-      .send({ username, password: "123456" })
+      .send({ username, password: "abc12345" })
       .expect(201);
     expect(res.body.code).toBe(0);
     return res.body.data.token;
@@ -112,5 +112,16 @@ describe("Records (e2e)", () => {
     const id = created.body.data.id;
     const res = await authed(tokenA).patch(`/records/${id}`).send({ content: "v2", expectedVersion: 99 }).expect(200);
     expect(res.body.code).toBe(10409);
+  });
+
+  it("GET /records/stats 返回聚合结构且不被 :id 路由吃掉", async () => {
+    await authed(tokenA)
+      .post("/records")
+      .send({ title: "A", content: "", tags: ["x"] })
+      .expect(201);
+    const res = await authed(tokenA).get("/records/stats").expect(200);
+    expect(res.body.data.total).toBe(1);
+    expect(res.body.data.trend7d).toHaveLength(7);
+    expect(res.body.data.mastery).toEqual({ none: 1, learning: 0, mastered: 0 });
   });
 });

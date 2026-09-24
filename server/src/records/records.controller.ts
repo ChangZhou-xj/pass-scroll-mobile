@@ -14,6 +14,11 @@ export class RecordsController {
     return this.records.list(user.userId, query);
   }
 
+  @Get("stats")
+  stats(@CurrentUser() user: AuthUser) {
+    return this.records.stats(user.userId);
+  }
+
   @Get(":id")
   detail(@CurrentUser() user: AuthUser, @Param("id") id: string) {
     return this.records.detail(user.userId, id);

@@ -187,4 +187,21 @@ describe("RecordsService", () => {
       expect(marked.updatedAt).toBe(record.updatedAt);
     });
   });
+
+  describe("stats 统计", () => {
+    it("返回总数/标签去重/置顶/掌握度分布/7 天趋势", async () => {
+      await service.create(userId, { title: "A", content: "", tags: ["x", "y"] });
+      const b = await service.create(userId, { title: "B", content: "", tags: ["y"] });
+      await service.togglePin(userId, b.id);
+      await service.setMastery(userId, b.id, "MASTERED");
+      const stats = await service.stats(userId);
+      expect(stats.total).toBe(2);
+      expect(stats.tagCount).toBe(2);
+      expect(stats.pinnedCount).toBe(1);
+      expect(stats.mastery).toEqual({ none: 1, learning: 0, mastered: 1 });
+      expect(stats.trend7d).toHaveLength(7);
+      expect(stats.trend7d[6]).toBe(2); // 今日新增 2 条
+      expect(stats.trend7d.slice(0, 6).every((n) => n === 0)).toBe(true);
+    });
+  });
 });
