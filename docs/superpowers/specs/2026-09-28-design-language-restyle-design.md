@@ -10,22 +10,22 @@
 
 ## 关键决策表
 
-| #   | 决策点          | 决定                                                                                                                                 | 理由                                                                                                              |
-| --- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| 1   | 实施方式        | 设计语言重构现有页面，不新建营销页                                                                                                   | 自用笔记 App 无 nav/pricing/footer 需求（用户拍板）                                                               |
-| 2   | 页面 chrome     | 全部页面 `navigationStyle: custom` + 自绘 NavBar/TabBar；**删除原生 tabBar 配置**                                                    | 用户拍板选全自定义路线；视觉上限与 eyebrow 页名需要                                                               |
-| 3   | tab 切换        | `switchTab` → `reLaunch`（仅 `review/index.vue:191`、`login/index.vue:63` 两处调用点）                                               | 删原生 tabBar 后 switchTab 不可用；数据在 Pinia，丢的只有滚动位置                                                 |
-| 4   | 图标            | NavBar 返回钮/TabBar 三图标用**内联 base64 SVG data-uri**（image 组件 + `?rpx` 方案见 §5 风险）或 iconfont；**不再生成 PNG**         | 原生 tabBar 删除后 PNG 体系失去必配理由；SVG 颜色随 token 走                                                      |
-| 5   | 字体            | 三端统一系统字体栈，不加载 web 字体；字重层级量化为 400/600/800                                                                      | 用户拍板；loadFontFace 安卓时序风险不值当                                                                         |
-| 6   | 楷体            | **退役**。`brand-title` style 块（login/index/profile 三页）删除，「通关秘籍」改 800 字重 sans wordmark + 负字距                     | 与 mono 单声部体系冲突（用户拍板）                                                                                |
-| 7   | 语义色          | 掌握绿 `#42B883`、复习黄 `#F0B429`、危险红 `#D9303E`、次要灰 `#67676C` **保留色相**；只用于 pill 徽章描边/文字与危险文字，不铺面     | 复习场景辨识度刚需；与文档 semantic 角色（glyph 不作 surface）兼容（用户拍板）                                    |
-| 8   | accent-magenta  | 不引入                                                                                                                               | App 无促销场景，YAGNI                                                                                             |
-| 9   | 色块分配        | 每页**至多一个**签名色块（映射表见 §4）；块间回白 canvas                                                                             | 文档核心节奏与 Don't 条款                                                                                         |
-| 10  | token 载体      | 单一来源 `src/theme/tokens.ts`（TS 常量）；模板静态 class 继续写 arbitrary hex 但取值必须出自映射表；动态色一律 `:style` + tokens.ts | unocss-preset-weapp 的 transformerClass 只转静态 class（项目既有陷阱记忆）；CSS 变量在 rich-text/三端风险高，弃用 |
-| 11  | markdown 容器色 | tip→mint、warning→cream、danger→pink、details→lilac，注入**字面 hex**（自 tokens.ts）                                                | rich-text 只认 inline style，不认 CSS 变量                                                                        |
-| 12  | wot-design-uni  | 不动。现有 9 页模板零 `wd-*` 使用，easycom 映射保留不删                                                                              | 无消费方，无主题化需求                                                                                            |
-| 13  | H5 适配层       | `adaptUnits`（rpx→px）管线与 `markdown.ts` 三段流水线结构不动，只换色值与字重                                                        | 契约稳定                                                                                                          |
-| 14  | 深色模式        | 不做                                                                                                                                 | DESIGN.md 自己声明 Known Gap；自用场景无需求                                                                      |
+| #   | 决策点          | 决定                                                                                                                                                          | 理由                                                                                                              |
+| --- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| 1   | 实施方式        | 设计语言重构现有页面，不新建营销页                                                                                                                            | 自用笔记 App 无 nav/pricing/footer 需求（用户拍板）                                                               |
+| 2   | 页面 chrome     | 全部页面 `navigationStyle: custom` + 自绘 NavBar/TabBar；**删除原生 tabBar 配置**                                                                             | 用户拍板选全自定义路线；视觉上限与 eyebrow 页名需要                                                               |
+| 3   | tab 切换        | `switchTab` → `reLaunch`（仅 `review/index.vue:191`、`login/index.vue:63` 两处调用点）                                                                        | 删原生 tabBar 后 switchTab 不可用；数据在 Pinia，丢的只有滚动位置                                                 |
+| 4   | 图标            | NavBar/TabBar 图标用 **wd-icon**（wot-design-uni 内置 iconfont，已验证含 `home`/`books`/`user`/`chevron-left`）；`color` 直接吃 tokens 常量；**不再生成 PNG** | 已随依赖打包、三端渲染有保证、零新资产；base64 SVG 在微信 image 历史上不稳，弃用                                  |
+| 5   | 字体            | 三端统一系统字体栈，不加载 web 字体；字重层级量化为 400/600/800                                                                                               | 用户拍板；loadFontFace 安卓时序风险不值当                                                                         |
+| 6   | 楷体            | **退役**。`brand-title` style 块（login/index/profile 三页）删除，「通关秘籍」改 800 字重 sans wordmark + 负字距                                              | 与 mono 单声部体系冲突（用户拍板）                                                                                |
+| 7   | 语义色          | 掌握绿 `#42B883`、复习黄 `#F0B429`、危险红 `#D9303E`、次要灰 `#67676C` **保留色相**；只用于 pill 徽章描边/文字与危险文字，不铺面                              | 复习场景辨识度刚需；与文档 semantic 角色（glyph 不作 surface）兼容（用户拍板）                                    |
+| 8   | accent-magenta  | 不引入                                                                                                                                                        | App 无促销场景，YAGNI                                                                                             |
+| 9   | 色块分配        | 每页**至多一个**签名色块（映射表见 §4）；块间回白 canvas                                                                                                      | 文档核心节奏与 Don't 条款                                                                                         |
+| 10  | token 载体      | 单一来源 `src/theme/tokens.ts`（TS 常量）；模板静态 class 继续写 arbitrary hex 但取值必须出自映射表；动态色一律 `:style` + tokens.ts                          | unocss-preset-weapp 的 transformerClass 只转静态 class（项目既有陷阱记忆）；CSS 变量在 rich-text/三端风险高，弃用 |
+| 11  | markdown 容器色 | tip→mint、warning→cream、danger→pink、details→lilac，注入**字面 hex**（自 tokens.ts）                                                                         | rich-text 只认 inline style，不认 CSS 变量                                                                        |
+| 12  | wot-design-uni  | 页面内容不消费、不做主题化；仅 chrome 组件消费其 `wd-icon`                                                                                                    | 页面无 wd-\* 使用；图标字体三端可用是唯一刚需                                                                     |
+| 13  | H5 适配层       | `adaptUnits`（rpx→px）管线与 `markdown.ts` 三段流水线结构不动，只换色值与字重                                                                                 | 契约稳定                                                                                                          |
+| 14  | 深色模式        | 不做                                                                                                                                                          | DESIGN.md 自己声明 Known Gap；自用场景无需求                                                                      |
 
 ## 1. Token 系统（`src/theme/tokens.ts`）
 
@@ -98,11 +98,11 @@
 - 挂载于 index/review/profile 三页根部；`fixed bottom-0`，白底 + hairline 顶边
 - 高度 100rpx + `padding-bottom: env(safe-area-inset-bottom)`；页面内容底部预留 `160rpx + safe-area`（复习页现有 `--tab-bar-height` 避让逻辑改为与自绘高度一致的常量）
 - 三项：icon + caption 文字；选中 = `ink`，未选 = `secondaryText`；点击 `uni.reLaunch`
-- icon 方案：优先内联 base64 SVG data-uri（image 组件三端可显，颜色烙在 SVG 内，两态两份 data-uri 由 `:src` 切换，规避 unocss 动态 class 陷阱）；若 MP 端 base64 data-uri 体积/表现有问题回退 iconfont 类（App 端可行但本轮不预埋）
+- icon 方案：`wd-icon`（easycom `^wd-` 已配置），TabBar 三项 `home`/`books`/`user`，返回钮 `chevron-left`；选中/未选中颜色经组件 `color` prop 传 tokens 常量（属性绑定非动态 class，无 transformerClass 陷阱）
 
 ### 2.4 wot-design-uni
 
-不动、不主题化（决策 #12）。
+页面内容不改造、不主题化；仅 CustomNavBar/CustomTabBar 消费 `wd-icon`（决策 #4/#12）。
 
 ## 3. 通用组件
 
@@ -154,7 +154,7 @@
 
 ## 6. 错误处理与边界
 
-- 图标方案双端风险：base64 SVG 在微信小程序 image 的 data-uri 支持是已知约束点，实现时**先做 3 分钟 spike**（复习页一个图标验证三端），失败即走 iconfont 回退（决策 #4），不阻塞其余页面
+- 图标方案风险已收敛：wd-icon 为已安装依赖内置字体（决策 #4），无需 spike；微信开发者工具实测时确认图标渲染即可
 - `reLaunch` 切 tab 后 review→index 返回手势：index 为栈底，NavBar `showBack=false`，物理返回退出 App（与原生 tabBar 行为一致）
 - 安卓机型 statusBarHeight 为 0/undefined 兜底 20px；H5 恒 0
 - 键盘弹起顶起 fixed 元素（App 端 `adjustPosition` 默认行为）：编辑器 textarea 非 fixed 安全；复习标记栏实测
@@ -165,7 +165,7 @@
 1. `pnpm type-check` 零新增报错（`RecordStoreProxy` 基线不破坏）
 2. `pnpm lint`、`pnpm lint:stylelint` 通过（style 块无 rpx——本规范继续有效，色块 padding 等尺寸全走 class）
 3. **H5**：`pnpm dev:h5` + 浏览器逐页截图走查 9 页 + 空态/加载态/危险操作确认弹窗；tab 互切、返回、下拉刷新白底
-4. **微信小程序**：`pnpm dev:mp-weixin` + 微信开发者工具实测（图标 data-uri、safe-area、rich-text 容器色）
+4. **微信小程序**：`pnpm dev:mp-weixin` + 微信开发者工具实测（wd-icon 渲染、safe-area、rich-text 容器色）
 5. **App**：本轮不实测（打包链路见 docs/deployment.md），列为发版回归项
 6. 交互回归清单抽验 deployment.md 验收表 #1–#14 中纯前端项：#5 新建、#7 冲突续编、#8 排序不变量、#12 离线只读、#14 登出清缓存——**必须全程通过，任何视觉改动不得触碰 store/service 逻辑**
 
@@ -176,4 +176,4 @@
 - 不动后端、接口契约、`record.d.ts`、store 数据结构
 - 不删 `static/tabbar/*.png`（留作回滚资产）
 - 不改 `vite.config.ts` 死 proxy、不动 prettier.config.mjs
-- wot-design-uni 不消费也不卸载
+- wot-design-uni 页面内容不消费也不卸载（chrome 仅用 wd-icon）
