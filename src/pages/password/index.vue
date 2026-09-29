@@ -24,10 +24,11 @@
         placeholder-style="color: #67676C;" />
     </view>
 
-    <!-- 底部确认按钮：fixed 白底栏保留，加 safe-area 内联避让（py-16rpx 会被 paddingBottom 覆盖属预期行为） -->
+    <!-- 底部确认按钮：fixed 白底栏保留；safe-area 走 calc(16rpx + env()) 复合，避免内联 paddingBottom 覆盖 py-16rpx 内衬
+         （inline rpx-in-calc 由 uni-h5 归一化换算，同首页 FAB / 复习页标记栏两例；py-16rpx 保留供顶衬与降级） -->
     <view
       class="fixed bottom-0 left-0 right-0 border-0 border-t-2rpx border-solid border-[#E3E3E6] bg-white px-30rpx py-16rpx"
-      :style="{ paddingBottom: 'env(safe-area-inset-bottom)' }">
+      :style="{ paddingBottom: 'calc(16rpx + env(safe-area-inset-bottom))' }">
       <PsButton size="lg" block @click="handleSubmit">确认修改</PsButton>
     </view>
   </view>
