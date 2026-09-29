@@ -1,5 +1,7 @@
 <template>
   <view class="min-h-screen bg-[#F7F8FA] pb-120rpx">
+    <CustomNavBar title="详情" show-back />
+
     <!-- 正文卡片 -->
     <view
       v-if="record"

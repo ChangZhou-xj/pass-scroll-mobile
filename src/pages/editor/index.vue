@@ -1,5 +1,7 @@
 <template>
   <view class="min-h-screen bg-[#F7F8FA] pb-160rpx">
+    <CustomNavBar :title="navTitle" show-back />
+
     <!-- 编辑/预览切换（颜色走 :style：动态 class 中的 arbitrary value 不会被 transformerClass 转换） -->
     <view class="mx-30rpx mt-24rpx flex h-64rpx rounded-32rpx bg-[#EEEEEE] p-4rpx">
       <view
@@ -113,6 +115,9 @@ const MAX_TAGS = 10;
 const editId = ref<string | undefined>(undefined);
 const isEdit = computed(() => Boolean(editId.value));
 
+// 导航标题改由 CustomNavBar 渲染（原生标题栏已随 navigationStyle: custom 移除）
+const navTitle = computed(() => (editId.value ? "编辑记录" : "新建记录"));
+
 const title = ref("");
 const content = ref("");
 const tags = ref<string[]>([]);
@@ -201,7 +206,6 @@ const handleSave = async () => {
 onLoad((query) => {
   const id = query?.id as string | undefined;
   editId.value = id;
-  uni.setNavigationBarTitle({ title: id ? "编辑记录" : "新建记录" });
   if (id) {
     prefill(id);
   }

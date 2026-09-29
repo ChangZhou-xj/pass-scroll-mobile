@@ -1,5 +1,7 @@
 <template>
-  <view class="review-page min-h-screen bg-[#F7F8FA] pb-160rpx">
+  <view class="review-page min-h-screen bg-[#F7F8FA] pb-260rpx">
+    <CustomNavBar title="复习" />
+
     <!-- 有当前题 -->
     <template v-if="current">
       <view class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx shadow-[0_4rpx_24rpx_rgba(62,99,221,0.06)]">
@@ -89,6 +91,8 @@
         </text>
       </view>
     </view>
+
+    <CustomTabBar />
   </view>
 </template>
 
@@ -188,7 +192,7 @@ const handleEmptyAction = () => {
   if (hasFilter.value) {
     resetFilter();
   } else {
-    uni.switchTab({ url: "/pages/index/index" });
+    uni.reLaunch({ url: "/pages/index/index" });
   }
 };
 

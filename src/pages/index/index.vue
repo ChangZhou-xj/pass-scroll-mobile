@@ -1,5 +1,5 @@
 <template>
-  <view class="min-h-screen bg-[#F7F8FA] px-30rpx pb-200rpx">
+  <view class="min-h-screen bg-[#F7F8FA] px-30rpx pb-260rpx">
     <!-- 品牌区 -->
     <view class="mt-24rpx flex items-end justify-between">
       <view class="flex flex-col">
@@ -66,6 +66,8 @@
       @click="goCreate">
       <text class="text-56rpx leading-none text-white">+</text>
     </view>
+
+    <CustomTabBar />
   </view>
 </template>
 

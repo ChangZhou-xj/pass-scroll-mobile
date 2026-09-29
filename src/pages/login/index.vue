@@ -1,5 +1,7 @@
 <template>
   <view class="min-h-screen bg-[#F7F8FA]">
+    <CustomNavBar transparent />
+
     <!-- 品牌区 -->
     <view class="flex flex-col items-center pt-160rpx">
       <text class="brand-title text-72rpx text-[#3E63DD]">通关秘籍</text>
@@ -60,7 +62,7 @@ const handleSubmit = async () => {
       await userStore.register(username.value, password.value);
     }
     uni.showToast({ title: "登录成功", icon: "success" });
-    setTimeout(() => uni.switchTab({ url: "/pages/index/index" }), 800);
+    setTimeout(() => uni.reLaunch({ url: "/pages/index/index" }), 800);
   } catch {
     // request.ts 已统一 toast 错误信息
   }

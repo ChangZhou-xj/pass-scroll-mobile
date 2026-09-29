@@ -11,103 +11,58 @@
     {
       "path": "pages/index/index",
       "style": {
-        "navigationBarTitleText": "首页",
         "enablePullDownRefresh": true,
-        "backgroundColor": "#FFFFFF",
-        "backgroundColorBottom": "#FFFFFF"
+        "backgroundColor": "#FFFFFF"
       }
     },
     {
       "path": "pages/review/index",
       "style": {
-        "navigationBarTitleText": "随机复习",
-        "backgroundColor": "#FFFFFF",
-        "backgroundColorBottom": "#FFFFFF"
+        "backgroundColor": "#FFFFFF"
       }
     },
     {
       "path": "pages/profile/index",
       "style": {
-        "navigationBarTitleText": "我的",
-        "backgroundColor": "#FFFFFF",
-        "backgroundColorBottom": "#FFFFFF"
+        "backgroundColor": "#FFFFFF"
       }
     },
     {
       "path": "pages/onboarding/index",
       "style": {
-        "navigationBarTitleText": " ",
-        "backgroundColor": "#FFFFFF",
-        "backgroundColorBottom": "#FFFFFF"
+        "backgroundColor": "#FFFFFF"
       }
     },
     {
       "path": "pages/login/index",
       "style": {
-        "navigationBarTitleText": "登录",
-        "backgroundColor": "#FFFFFF",
-        "backgroundColorBottom": "#FFFFFF"
+        "backgroundColor": "#FFFFFF"
       }
     },
     {
       "path": "pages/detail/index",
-      "style": {
-        "navigationBarTitleText": "详情"
-      }
+      "style": {}
     },
     {
       "path": "pages/versions/index",
       "style": {
-        "navigationBarTitleText": "历史版本",
-        "backgroundColor": "#FFFFFF",
-        "backgroundColorBottom": "#FFFFFF"
+        "backgroundColor": "#FFFFFF"
       }
     },
     {
       "path": "pages/password/index",
       "style": {
-        "navigationBarTitleText": "修改密码",
-        "backgroundColor": "#FFFFFF",
-        "backgroundColorBottom": "#FFFFFF"
+        "backgroundColor": "#FFFFFF"
       }
     },
     {
       "path": "pages/editor/index",
-      "style": {
-        "navigationBarTitleText": "编辑"
-      }
+      "style": {}
     }
   ],
   "globalStyle": {
+    "navigationStyle": "custom",
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "通关秘籍",
-    "navigationBarBackgroundColor": "#FFFFFF",
     "backgroundColor": "#FFFFFF"
-  },
-  "tabBar": {
-    "color": "#8C8C8C",
-    "selectedColor": "#3E63DD",
-    "backgroundColor": "#FFFFFF",
-    "borderStyle": "black",
-    "list": [
-      {
-        "pagePath": "pages/index/index",
-        "text": "首页",
-        "iconPath": "static/tabbar/home.png",
-        "selectedIconPath": "static/tabbar/home-active.png"
-      },
-      {
-        "pagePath": "pages/review/index",
-        "text": "复习",
-        "iconPath": "static/tabbar/review.png",
-        "selectedIconPath": "static/tabbar/review-active.png"
-      },
-      {
-        "pagePath": "pages/profile/index",
-        "text": "我的",
-        "iconPath": "static/tabbar/profile.png",
-        "selectedIconPath": "static/tabbar/profile-active.png"
-      }
-    ]
   }
 }

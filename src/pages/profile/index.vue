@@ -1,5 +1,7 @@
 <template>
-  <view class="min-h-screen bg-[#F7F8FA] pb-60rpx">
+  <view class="min-h-screen bg-[#F7F8FA] pb-200rpx">
+    <CustomNavBar title="我的" />
+
     <template v-if="isLoggedIn">
       <!-- 用户卡 -->
       <view class="mx-30rpx mt-24rpx flex items-center rounded-24rpx bg-white p-30rpx">
@@ -100,6 +102,8 @@
         <text class="text-28rpx text-white">去登录</text>
       </view>
     </view>
+
+    <CustomTabBar />
   </view>
 </template>
 

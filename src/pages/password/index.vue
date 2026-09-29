@@ -1,5 +1,7 @@
 <template>
   <view class="min-h-screen bg-[#F7F8FA] pb-160rpx">
+    <CustomNavBar title="修改密码" show-back />
+
     <!-- 表单卡片 -->
     <view class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx">
       <input
@@ -33,7 +35,6 @@
 
 <script setup lang="ts">
 import type { AuthUserInfo } from "@/api/auth";
-import { onLoad } from "@dcloudio/uni-app";
 import AuthAPI from "@/api/auth";
 import { useUserStore } from "@/store/modules/user";
 
@@ -74,8 +75,4 @@ const handleSubmit = async () => {
     submitting.value = false;
   }
 };
-
-onLoad(() => {
-  uni.setNavigationBarTitle({ title: "修改密码" });
-});
 </script>

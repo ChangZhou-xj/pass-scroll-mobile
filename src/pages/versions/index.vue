@@ -1,5 +1,7 @@
 <template>
   <view class="min-h-screen bg-[#F7F8FA] pb-140rpx">
+    <CustomNavBar title="历史版本" show-back />
+
     <!-- 列表态 -->
     <template v-if="!current">
       <view v-if="snapshots.length" class="mx-30rpx mt-24rpx overflow-hidden rounded-24rpx bg-white px-30rpx">
@@ -133,7 +135,6 @@ const handleRestore = () => {
 
 onLoad((query) => {
   recordId.value = (query?.id as string) ?? "";
-  uni.setNavigationBarTitle({ title: "历史版本" });
 });
 
 onShow(() => {

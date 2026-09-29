@@ -24,6 +24,7 @@ export default [
         ...autoImportConfig.globals, // 自动导入的全局变量
         ...{
           uni: "readonly", // uni-app 全局对象
+          getCurrentPages: "readonly", // uni-app 页面栈全局 API（类型由 @dcloudio/types 提供）
         },
       }
     }
