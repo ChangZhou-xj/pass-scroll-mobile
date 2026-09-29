@@ -25,25 +25,25 @@ const CONTAINER_DEFAULT_TITLES: Record<ContainerKind, string> = {
 
 /** 标签 → 内联样式（rich-text 只认内联样式，不认 class/外部 CSS） */
 const TAG_STYLES: Record<string, string> = {
-  h1: "font-size:40rpx;font-weight:700;margin:32rpx 0 16rpx;color:#3C3C43;",
-  h2: "font-size:36rpx;font-weight:700;margin:32rpx 0 16rpx;color:#3C3C43;border-bottom:1px solid #eee;padding-bottom:8rpx;",
-  h3: "font-size:32rpx;font-weight:600;margin:24rpx 0 12rpx;color:#3C3C43;",
-  h4: "font-size:30rpx;font-weight:600;margin:20rpx 0 10rpx;color:#3C3C43;",
-  h5: "font-size:28rpx;font-weight:600;margin:16rpx 0 8rpx;color:#3C3C43;",
-  h6: "font-size:26rpx;font-weight:600;margin:16rpx 0 8rpx;color:#67676C;",
-  p: "margin:12rpx 0;line-height:1.8;color:#3C3C43;font-size:28rpx;",
-  blockquote: "border-left:6rpx solid #3E63DD;margin:16rpx 0;padding:8rpx 20rpx;color:#67676C;background:#F7F8FA;",
+  h1: "font-size:40rpx;font-weight:800;letter-spacing:-1px;margin:32rpx 0 16rpx;color:#0D0D0D;",
+  h2: "font-size:36rpx;font-weight:700;letter-spacing:-1px;margin:32rpx 0 16rpx;color:#0D0D0D;border-bottom:1px solid #E3E3E6;padding-bottom:8rpx;",
+  h3: "font-size:32rpx;font-weight:700;margin:24rpx 0 12rpx;color:#0D0D0D;",
+  h4: "font-size:30rpx;font-weight:600;margin:20rpx 0 10rpx;color:#0D0D0D;",
+  h5: "font-size:28rpx;font-weight:600;margin:16rpx 0 8rpx;color:#0D0D0D;",
+  h6: "font-size:26rpx;font-weight:600;margin:16rpx 0 8rpx;color:#0D0D0D;",
+  p: "margin:12rpx 0;line-height:1.8;color:#0D0D0D;font-size:28rpx;",
+  blockquote: "border-left:6rpx solid #0D0D0D;margin:16rpx 0;padding:8rpx 20rpx;color:#0D0D0D;background:#F4F5F7;",
   ul: "padding-left:40rpx;margin:12rpx 0;",
   ol: "padding-left:40rpx;margin:12rpx 0;",
-  li: "margin:6rpx 0;line-height:1.8;font-size:28rpx;color:#3C3C43;",
-  a: "color:#3E63DD;text-decoration:underline;",
+  li: "margin:6rpx 0;line-height:1.8;font-size:28rpx;color:#0D0D0D;",
+  a: "color:#0D0D0D;text-decoration:underline;",
   strong: "font-weight:700;",
   em: "font-style:italic;",
-  hr: "border:none;border-top:1px solid #eee;margin:32rpx 0;",
+  hr: "border:none;border-top:1px solid #E3E3E6;margin:32rpx 0;",
   table: "border-collapse:collapse;width:100%;margin:16rpx 0;font-size:26rpx;",
-  th: "border:1px solid #e5e5e5;background:#F7F8FA;padding:12rpx 16rpx;font-weight:600;",
-  td: "border:1px solid #e5e5e5;padding:12rpx 16rpx;",
-  img: "max-width:100%;border-radius:12rpx;",
+  th: "border:1px solid #E3E3E6;background:#F4F5F7;padding:12rpx 16rpx;font-weight:600;color:#0D0D0D;",
+  td: "border:1px solid #E3E3E6;padding:12rpx 16rpx;color:#0D0D0D;",
+  img: "max-width:100%;border-radius:16rpx;",
   del: "text-decoration:line-through;color:#67676C;",
 };
 
@@ -52,7 +52,7 @@ const PRE_STYLE =
 const CODE_IN_PRE_STYLE =
   "font-family:Consolas,Menlo,monospace;background:transparent;color:#e6e6e6;padding:0;font-size:24rpx;";
 const CODE_INLINE_STYLE =
-  "font-family:Consolas,Menlo,monospace;background:rgba(62,99,221,0.08);color:#3E63DD;border-radius:6rpx;padding:2rpx 8rpx;font-size:26rpx;";
+  "font-family:Consolas,Menlo,monospace;background:#F4F5F7;color:#0D0D0D;border-radius:8rpx;padding:2rpx 8rpx;font-size:26rpx;";
 
 /** H5 标记：rich-text 字符串 nodes 的内联样式不做 rpx 转换（浏览器不识别 rpx），
  * 需在 H5 端把 rpx 按 750 设计稿换算为 px；小程序原生支持 rpx，保持原样。
