@@ -1,6 +1,6 @@
 <template>
   <view :style="wrapStyle">
-    <view class="h-88rpx flex items-center px-24rpx">
+    <view class="h-88rpx flex items-center px-24rpx" :style="rowStyle">
       <view
         v-if="showBack && canGoBack"
         class="mr-16rpx h-72rpx w-72rpx shrink-0 flex-center rounded-full"
@@ -27,6 +27,13 @@ const props = withDefaults(defineProps<{ title?: string; showBack?: boolean; tra
 
 const statusBarPx = getStatusBarPx();
 
+// 微信右上角胶囊按钮避让量：right 插槽不能压在胶囊下，预留「屏幕宽 - 胶囊左缘 + 8px 间距」。
+// 其他端为 0，此时不写内联，右内衬沿用 class 的 px-24rpx（内联只覆盖 paddingRight，左侧 class 不受影响）。
+let capsuleReservePx = 0;
+// #ifdef MP-WEIXIN
+capsuleReservePx = uni.getSystemInfoSync().windowWidth - uni.getMenuButtonBoundingClientRect().left;
+// #endif
+
 const canGoBack = getCurrentPages().length > 1;
 
 const goBack = () => {
@@ -40,4 +47,7 @@ const goBack = () => {
 const wrapStyle = computed(
   () => `padding-top:${statusBarPx}px;background:${props.transparent ? "transparent" : T.canvas};`,
 );
+
+// 仅 MP-WEIXIN 下有值；空串在其他端不产生任何内联样式，class 的 24rpx 左右内衬保持不变
+const rowStyle = computed(() => (capsuleReservePx > 0 ? `padding-right:${capsuleReservePx + 8}px;` : ""));
 </script>

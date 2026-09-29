@@ -50,7 +50,8 @@
     <!-- 底部操作栏 -->
     <view
       v-if="record"
-      class="fixed bottom-0 left-0 right-0 border-0 border-t-2rpx border-solid border-[#E3E3E6] bg-white">
+      class="fixed bottom-0 left-0 right-0 border-0 border-t-2rpx border-solid border-[#E3E3E6] bg-white"
+      :style="{ paddingBottom: 'env(safe-area-inset-bottom)' }">
       <view class="flex h-100rpx">
         <view class="flex-1 flex-center" @click="handleTogglePin">
           <text class="text-28rpx text-[#0D0D0D]">{{ record.isPinned ? "取消置顶" : "置顶" }}</text>

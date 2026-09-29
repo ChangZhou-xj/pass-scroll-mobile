@@ -8,7 +8,7 @@
         <view
           v-for="item in snapshots"
           :key="item.id"
-          class="mb-20rpx flex items-center rounded-16rpx border-2rpx border-solid border-[#E3E3E6] bg-white px-24rpx py-20rpx"
+          class="mb-20rpx flex items-center rounded-16rpx border-2rpx border-solid border-[#E3E3E6] bg-white px-24rpx py-24rpx"
           @click="openSnapshot(item)">
           <text
             class="mr-16rpx rounded-full bg-[#F4F5F7] px-16rpx py-2rpx font-mono text-20rpx tracking-[2rpx] text-[#0D0D0D]">
@@ -52,7 +52,8 @@
 
       <!-- 底部固定双按钮：secondary / primary 按钮对（同复习页） -->
       <view
-        class="fixed bottom-0 left-0 right-0 border-0 border-t-2rpx border-solid border-[#E3E3E6] bg-white px-30rpx py-16rpx">
+        class="fixed bottom-0 left-0 right-0 border-0 border-t-2rpx border-solid border-[#E3E3E6] bg-white px-30rpx py-16rpx"
+        :style="{ paddingBottom: 'calc(16rpx + env(safe-area-inset-bottom))' }">
         <view class="flex">
           <view class="mr-20rpx flex-1">
             <PsButton variant="secondary" size="lg" block @click="backToList">返回列表</PsButton>

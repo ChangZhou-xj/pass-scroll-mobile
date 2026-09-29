@@ -1,5 +1,5 @@
 <template>
-  <view class="relative min-h-screen bg-white" :style="{ paddingTop: statusBarPx + 'px' }">
+  <view class="relative box-border min-h-screen bg-white" :style="{ paddingTop: statusBarPx + 'px' }">
     <!-- 跳过 -->
     <view class="absolute right-40rpx z-50" :style="{ top: statusBarPx + 20 + 'px' }" @click="finish">
       <text class="text-26rpx text-[#67676C]">跳过</text>
