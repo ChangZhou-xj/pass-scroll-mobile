@@ -35,6 +35,12 @@ module.exports = {
         ignorePseudoClasses: ["global", "export", "deep"],
       },
     ],
+    "selector-type-no-unknown": [
+      true,
+      {
+        ignoreTypes: ["page"],
+      },
+    ],
     "unit-no-unknown": [
       true,
       {
