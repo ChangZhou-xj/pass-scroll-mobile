@@ -1,13 +1,13 @@
 <template>
-  <view class="min-h-screen bg-[#F7F8FA] pb-120rpx">
+  <view class="min-h-screen bg-white pb-120rpx">
     <CustomNavBar title="详情" show-back />
 
-    <!-- 正文卡片 -->
+    <!-- 正文卡片：白卡 + hairline 描边（DESIGN.md feature-card-light） -->
     <view
       v-if="record"
-      class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx shadow-[0_4rpx_24rpx_rgba(62,99,221,0.06)]">
-      <text class="note-title block text-44rpx font-bold text-[#3C3C43]">{{ record.title }}</text>
-      <view class="mt-16rpx h-6rpx w-64rpx rounded-3rpx bg-[#3E63DD]" />
+      class="mx-30rpx mt-24rpx rounded-48rpx border-2rpx border-solid border-[#E3E3E6] bg-white p-30rpx">
+      <text class="block text-44rpx font-extrabold tracking-[-2rpx] text-[#0D0D0D]">{{ record.title }}</text>
+      <view class="mt-16rpx h-6rpx w-64rpx rounded-3rpx bg-[#0D0D0D]" />
 
       <!-- meta：标签 + 更新时间 -->
       <view class="mt-20rpx flex items-start justify-between">
@@ -15,20 +15,25 @@
           <text
             v-for="tag in record.tags"
             :key="tag"
-            class="mr-12rpx mb-8rpx rounded-12rpx bg-[#3E63DD]/10 px-16rpx py-4rpx text-22rpx text-[#3E63DD]">
+            class="mr-12rpx mb-8rpx rounded-full bg-[#F4F5F7] px-16rpx py-4rpx text-22rpx text-[#0D0D0D]">
             {{ tag }}
           </text>
         </view>
         <text
           v-if="record.mastery !== 'NONE'"
-          class="ml-12rpx shrink-0 text-20rpx"
-          :style="{ color: record.mastery === 'MASTERED' ? '#42B883' : '#F0B429' }">
+          class="ml-12rpx shrink-0 rounded-full border-2rpx border-solid px-16rpx py-2rpx text-20rpx"
+          :style="{
+            color: record.mastery === 'MASTERED' ? '#42B883' : '#F0B429',
+            borderColor: record.mastery === 'MASTERED' ? '#42B883' : '#F0B429',
+          }">
           {{ record.mastery === "MASTERED" ? "已掌握" : "复习中" }}
         </text>
-        <text class="ml-16rpx shrink-0 text-22rpx text-[#67676C]">{{ formatTime(record.updatedAt) }}</text>
+        <text class="ml-16rpx shrink-0 font-mono text-20rpx tracking-[2rpx] text-[#67676C]">
+          {{ formatTime(record.updatedAt) }}
+        </text>
       </view>
 
-      <view class="my-24rpx h-1rpx bg-[#EEEEEE]" />
+      <view class="my-24rpx h-1rpx bg-[#E3E3E6]" />
 
       <!-- markdown 分段 -->
       <view v-for="(seg, index) in segments" :key="index">
@@ -43,18 +48,20 @@
     </view>
 
     <!-- 底部操作栏 -->
-    <view v-if="record" class="fixed bottom-0 left-0 right-0 border-t border-solid border-[#EEEEEE] bg-white">
+    <view
+      v-if="record"
+      class="fixed bottom-0 left-0 right-0 border-0 border-t-2rpx border-solid border-[#E3E3E6] bg-white">
       <view class="flex h-100rpx">
         <view class="flex-1 flex-center" @click="handleTogglePin">
-          <text class="text-28rpx text-[#3C3C43]">{{ record.isPinned ? "取消置顶" : "置顶" }}</text>
+          <text class="text-28rpx text-[#0D0D0D]">{{ record.isPinned ? "取消置顶" : "置顶" }}</text>
         </view>
-        <view class="flex-1 flex-center border-l border-solid border-[#EEEEEE]" @click="handleEdit">
-          <text class="text-28rpx text-[#3C3C43]">编辑</text>
+        <view class="flex-1 flex-center border-0 border-l-2rpx border-solid border-[#E3E3E6]" @click="handleEdit">
+          <text class="text-28rpx text-[#0D0D0D]">编辑</text>
         </view>
-        <view class="flex-1 flex-center border-l border-solid border-[#EEEEEE]" @click="handleHistory">
-          <text class="text-28rpx text-[#3C3C43]">历史</text>
+        <view class="flex-1 flex-center border-0 border-l-2rpx border-solid border-[#E3E3E6]" @click="handleHistory">
+          <text class="text-28rpx text-[#0D0D0D]">历史</text>
         </view>
-        <view class="flex-1 flex-center border-l border-solid border-[#EEEEEE]" @click="handleDelete">
+        <view class="flex-1 flex-center border-0 border-l-2rpx border-solid border-[#E3E3E6]" @click="handleDelete">
           <text class="text-28rpx text-[#D9303E]">删除</text>
         </view>
       </view>
@@ -162,9 +169,3 @@ onShow(() => {
   loadRecord();
 });
 </script>
-
-<style scoped>
-.note-title {
-  font-family: "STKaiti", "KaiTi", "Kaiti SC", "SimSun", serif;
-}
-</style>

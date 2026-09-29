@@ -1,20 +1,23 @@
 <template>
-  <view class="min-h-screen bg-[#F7F8FA] pb-140rpx">
+  <view class="min-h-screen bg-white pb-140rpx">
     <CustomNavBar title="历史版本" show-back />
 
-    <!-- 列表态 -->
+    <!-- 列表态：cream 时间线块 + hairline 描边行卡 -->
     <template v-if="!current">
-      <view v-if="snapshots.length" class="mx-30rpx mt-24rpx overflow-hidden rounded-24rpx bg-white px-30rpx">
+      <view v-if="snapshots.length" class="mx-30rpx mt-24rpx rounded-48rpx bg-[#F7F2E7] p-30rpx">
         <view
           v-for="item in snapshots"
           :key="item.id"
-          class="flex items-center border-b border-solid border-[#EEEEEE] py-24rpx"
+          class="mb-20rpx flex items-center rounded-16rpx border-2rpx border-solid border-[#E3E3E6] bg-white px-24rpx py-20rpx"
           @click="openSnapshot(item)">
-          <text class="mr-16rpx rounded-8rpx bg-[#3E63DD]/10 px-12rpx py-2rpx text-22rpx text-[#3E63DD]">
+          <text
+            class="mr-16rpx rounded-full bg-[#F4F5F7] px-16rpx py-2rpx font-mono text-20rpx tracking-[2rpx] text-[#0D0D0D]">
             v{{ item.version }}
           </text>
-          <text class="flex-1 truncate text-28rpx text-[#3C3C43]">{{ item.title }}</text>
-          <text class="ml-16rpx shrink-0 text-22rpx text-[#67676C]">{{ formatTime(item.createdAt) }}</text>
+          <text class="flex-1 truncate text-28rpx text-[#0D0D0D]">{{ item.title }}</text>
+          <text class="ml-16rpx shrink-0 font-mono text-20rpx tracking-[2rpx] text-[#67676C]">
+            {{ formatTime(item.createdAt) }}
+          </text>
         </view>
       </view>
 
@@ -27,17 +30,18 @@
 
     <!-- 预览态 -->
     <template v-else>
-      <view class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx">
-        <text class="note-title block text-44rpx font-bold text-[#3C3C43]">{{ current.title }}</text>
+      <view class="mx-30rpx mt-24rpx rounded-48rpx border-2rpx border-solid border-[#E3E3E6] bg-white p-30rpx">
+        <text class="block text-44rpx font-extrabold tracking-[-2rpx] text-[#0D0D0D]">{{ current.title }}</text>
 
         <view class="mt-20rpx flex items-center">
-          <text class="mr-12rpx rounded-8rpx bg-[#3E63DD]/10 px-12rpx py-2rpx text-22rpx text-[#3E63DD]">
+          <text
+            class="mr-16rpx rounded-full bg-[#F4F5F7] px-16rpx py-2rpx font-mono text-20rpx tracking-[2rpx] text-[#0D0D0D]">
             v{{ current.version }}
           </text>
-          <text class="text-22rpx text-[#67676C]">{{ formatTime(current.createdAt) }}</text>
+          <text class="font-mono text-20rpx tracking-[2rpx] text-[#67676C]">{{ formatTime(current.createdAt) }}</text>
         </view>
 
-        <view class="my-24rpx h-1rpx bg-[#EEEEEE]" />
+        <view class="my-24rpx h-1rpx bg-[#E3E3E6]" />
 
         <!-- markdown 分段 -->
         <view v-for="(seg, index) in segments" :key="index">
@@ -46,16 +50,15 @@
         </view>
       </view>
 
-      <!-- 底部固定双按钮（样式照复习页） -->
-      <view class="fixed bottom-0 left-0 right-0 border-t border-solid border-[#EEEEEE] bg-white px-30rpx py-16rpx">
+      <!-- 底部固定双按钮：secondary / primary 按钮对（同复习页） -->
+      <view
+        class="fixed bottom-0 left-0 right-0 border-0 border-t-2rpx border-solid border-[#E3E3E6] bg-white px-30rpx py-16rpx">
         <view class="flex">
-          <view
-            class="mr-20rpx h-88rpx flex-1 flex-center rounded-44rpx border-2rpx border-solid border-[#3E63DD] bg-white"
-            @click="backToList">
-            <text class="text-28rpx text-[#3E63DD]">返回列表</text>
+          <view class="mr-20rpx flex-1">
+            <PsButton variant="secondary" size="lg" block @click="backToList">返回列表</PsButton>
           </view>
-          <view class="h-88rpx flex-1 flex-center rounded-44rpx bg-[#3E63DD]" @click="handleRestore">
-            <text class="text-28rpx text-white">恢复此版本</text>
+          <view class="flex-1">
+            <PsButton size="lg" block @click="handleRestore">恢复此版本</PsButton>
           </view>
         </view>
       </view>
@@ -117,7 +120,7 @@ const handleRestore = () => {
   uni.showModal({
     title: "恢复此版本",
     content: "将以此版本覆盖当前内容，当前内容会留存为新的历史版本。",
-    confirmColor: "#3E63DD",
+    confirmColor: "#0D0D0D",
     success: async (res) => {
       if (!res.confirm || !current.value) return;
       const sid = current.value.id;
@@ -145,9 +148,3 @@ onShow(() => {
   if (!current.value) loadList();
 });
 </script>
-
-<style scoped>
-.note-title {
-  font-family: "STKaiti", "KaiTi", "Kaiti SC", "SimSun", serif;
-}
-</style>
