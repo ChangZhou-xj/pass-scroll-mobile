@@ -1,17 +1,20 @@
 <template>
-  <view class="review-page min-h-screen bg-[#F7F8FA] pb-260rpx">
+  <view class="review-page min-h-screen bg-white pb-260rpx">
     <CustomNavBar title="复习" />
 
     <!-- 有当前题 -->
     <template v-if="current">
-      <view class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx shadow-[0_4rpx_24rpx_rgba(62,99,221,0.06)]">
+      <view class="mx-30rpx mt-24rpx rounded-48rpx bg-[#D6F0E3] p-48rpx">
         <view class="flex items-center">
           <text v-if="current.isPinned" class="mr-8rpx text-32rpx">📌</text>
-          <text class="note-title text-40rpx font-bold text-[#3C3C43]">{{ current.title }}</text>
+          <text class="text-40rpx font-semibold tracking-[-1rpx] text-[#0D0D0D]">{{ current.title }}</text>
           <text
             v-if="current.mastery !== 'NONE'"
-            class="ml-12rpx shrink-0 text-20rpx"
-            :style="{ color: current.mastery === 'MASTERED' ? '#42B883' : '#F0B429' }">
+            class="ml-12rpx shrink-0 rounded-full border-2rpx border-solid px-16rpx py-2rpx text-20rpx"
+            :style="{
+              color: current.mastery === 'MASTERED' ? '#42B883' : '#F0B429',
+              borderColor: current.mastery === 'MASTERED' ? '#42B883' : '#F0B429',
+            }">
             {{ current.mastery === "MASTERED" ? "已掌握" : "复习中" }}
           </text>
         </view>
@@ -20,12 +23,12 @@
           <text
             v-for="tag in current.tags"
             :key="tag"
-            class="mr-12rpx mb-8rpx rounded-12rpx bg-[#3E63DD]/10 px-16rpx py-4rpx text-22rpx text-[#3E63DD]">
+            class="mr-12rpx mb-8rpx rounded-full bg-[#F4F5F7] px-16rpx py-4rpx text-22rpx text-[#0D0D0D]">
             {{ tag }}
           </text>
         </view>
 
-        <view class="my-24rpx h-1rpx bg-[#EEEEEE]" />
+        <view class="my-24rpx h-1rpx bg-[#A9DCC3]" />
 
         <!-- markdown 分段；details 容器默认折叠，点按揭示答案 -->
         <view v-for="(seg, index) in segments" :key="index">
@@ -43,37 +46,35 @@
         <text class="text-22rpx text-[#67676C]">从 {{ poolSize }} 条笔记中随机抽取</text>
         <template v-if="hasFilter">
           <text class="text-22rpx text-[#67676C]">（已按首页筛选）</text>
-          <text class="ml-8rpx text-22rpx text-[#3E63DD]" @click="resetFilter">重置为全部</text>
+          <text class="ml-8rpx text-22rpx font-semibold text-[#0D0D0D]" @click="resetFilter">重置为全部</text>
         </template>
-        <text class="ml-16rpx text-22rpx text-[#3E63DD]" @click="toggleIncludeMastered">
+        <text class="ml-16rpx text-22rpx font-semibold text-[#0D0D0D]" @click="toggleIncludeMastered">
           {{ includeMastered ? "排除已掌握" : "包含已掌握" }}
         </text>
       </view>
 
       <!-- 底部双按钮 -->
       <view class="mx-30rpx mt-30rpx flex">
-        <view
-          class="mr-20rpx h-88rpx flex-1 flex-center rounded-44rpx border-2rpx border-solid border-[#3E63DD] bg-white"
-          @click="goDetail">
-          <text class="text-28rpx text-[#3E63DD]">查看详情</text>
+        <view class="mr-20rpx flex-1">
+          <PsButton variant="secondary" size="lg" block @click="goDetail">查看详情</PsButton>
         </view>
-        <view class="h-88rpx flex-1 flex-center rounded-44rpx bg-[#3E63DD]" @click="pickRandom">
-          <text class="text-28rpx text-white">换一题</text>
+        <view class="flex-1">
+          <PsButton size="lg" block @click="pickRandom">换一题</PsButton>
         </view>
       </view>
 
       <!-- 掌握度标记：答案展开后浮现，固定底部双大按钮 -->
+      <!-- zIndex 走内联样式：自绘 CustomTabBar 同为 z-50，标记栏需稳定压过它（App/MP 无 H5 上浮避让） -->
       <view
         v-if="showMark"
-        class="review-mark-bar fixed bottom-0 left-0 right-0 z-50 border-t border-solid border-[#EEEEEE] bg-white px-30rpx py-16rpx">
+        class="review-mark-bar fixed bottom-0 left-0 right-0 border-t border-solid border-[#E3E3E6] bg-white px-30rpx py-16rpx"
+        :style="{ zIndex: 61 }">
         <view class="flex">
-          <view
-            class="mr-20rpx h-96rpx flex-1 flex-center rounded-48rpx border-2rpx border-solid border-[#F0B429] bg-white"
-            @click="mark('LEARNING')">
-            <text class="text-28rpx text-[#F0B429]">仍需复习</text>
+          <view class="mr-20rpx flex-1">
+            <PsButton variant="secondary" size="lg" block @click="mark('LEARNING')">仍需复习</PsButton>
           </view>
-          <view class="h-96rpx flex-1 flex-center rounded-48rpx bg-[#42B883]" @click="mark('MASTERED')">
-            <text class="text-28rpx text-white">已掌握</text>
+          <view class="flex-1">
+            <PsButton size="lg" block @click="mark('MASTERED')">已掌握</PsButton>
           </view>
         </view>
       </view>
@@ -85,10 +86,10 @@
       <text class="mt-24rpx text-28rpx text-[#67676C]">
         {{ allMastered ? "全部已掌握，真不错" : hasFilter ? "当前筛选下没有笔记" : "还没有可复习的笔记" }}
       </text>
-      <view class="mt-40rpx h-80rpx flex-center rounded-40rpx bg-[#3E63DD] px-48rpx" @click="handleEmptyAction">
-        <text class="text-28rpx text-white">
+      <view class="mt-40rpx">
+        <PsButton size="lg" @click="handleEmptyAction">
           {{ allMastered ? "包含已掌握再复习" : hasFilter ? "重置为全部" : "去写第一条" }}
-        </text>
+        </PsButton>
       </view>
     </view>
 
@@ -213,12 +214,8 @@ onShow(async () => {
 </script>
 
 <style scoped>
-.note-title {
-  font-family: "STKaiti", "KaiTi", "Kaiti SC", "SimSun", serif;
-}
-
 /* #ifdef H5 */
-/* H5 端 tabBar position:fixed bottom:0 z-index:998，标记栏需上浮避让；
+/* 自绘 tabBar 内容区 100rpx（H5=50px），标记栏上浮避让；
    style 块禁 rpx，160rpx 按 375 基线换算为 80px */
 .review-mark-bar {
   bottom: calc(var(--tab-bar-height, 50px) + env(safe-area-inset-bottom));
