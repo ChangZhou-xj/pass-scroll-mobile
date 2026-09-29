@@ -10,6 +10,8 @@
 
 **Spec:** [docs/superpowers/specs/2026-09-28-design-language-restyle-design.md](../specs/2026-09-28-design-language-restyle-design.md)（图标决策已修订为 wd-icon，spec 与本计划一致）
 
+**门禁口径（全计划统一）:** 各任务验证行里的「`pnpm type-check` src/ 零报错」不是指命令 exit 0。本仓库基线含 **9 条 `node_modules/wot-design-uni` 的存量 d.ts/组件类型错**（`components/common/util.ts`×3、`wd-progress.vue`×4、`wd-upload.vue`×2），在 ed999b8 之前的提交里就已存在、与本次重皮无关。因此达标判定固定为两条：**① `pnpm type-check 2>&1 | grep -cE '^src/'` == 0；② `pnpm type-check 2>&1 | grep -c '^node_modules'` 仍 == 9（存量集合不扩大）**。修它不在本轮范围：不放宽 tsconfig、不改 package.json、不删依赖来「消掉」这 9 条。
+
 ## Global Constraints
 
 - **色板（DESIGN.md 拍板值，全计划唯一来源）**：ink `#0D0D0D`、canvas `#FFFFFF`、surface-soft `#F4F5F7`、hairline `#E3E3E6`、hairline-soft `#EFEFF1`、block-lime `#D9F2B4`、block-lilac `#E7E3FA`、block-cream `#F7F2E7`、block-mint `#D6F0E3`、block-pink `#F9DCE4`、块描边：mintStroke `#A9DCC3`、creamStroke `#E4D5B5`、pinkStroke `#F0B8CB`、lilacStroke `#C4B8EE`；语义色保留：masteryGreen `#42B883`、masteryAmber `#F0B429`、danger `#D9303E`、secondaryText `#67676C`（仅 caption/placeholder/未选中 tab，禁入正文）
@@ -101,7 +103,7 @@ page {
 
 - [ ] **Step 4: 验证**
 
-`pnpm type-check` → 零报错；`pnpm lint` → 通过；`pnpm lint:stylelint` → 通过（App.vue 无 rpx）。起走查环境后打开 http://localhost:5173 首页：下拉刷新露出区域应为白色。
+`pnpm type-check` → src/ 零报错；`pnpm lint` → 通过；`pnpm lint:stylelint` → 通过（App.vue 无 rpx）。起走查环境后打开 http://localhost:5173 首页：下拉刷新露出区域应为白色。
 
 - [ ] **Step 5: Commit**
 
@@ -230,7 +232,7 @@ const handleClick = () => {
 
 - [ ] **Step 3: 验证**
 
-`pnpm type-check` 零报错、`pnpm lint` 通过。走查环境首页列表：卡片应为白底 1px 级灰描边（chrome-devtools 取 `.RecordCard 根节点` 的 computed `border-top-color` = `rgb(227, 227, 230)`、`box-shadow` = `none`）；tag chip computed `background-color` = `rgb(244, 245, 247)`。
+`pnpm type-check` src/ 零报错、`pnpm lint` 通过。走查环境首页列表：卡片应为白底 1px 级灰描边（chrome-devtools 取 `.RecordCard 根节点` 的 computed `border-top-color` = `rgb(227, 227, 230)`、`box-shadow` = `none`）；tag chip computed `background-color` = `rgb(244, 245, 247)`。
 
 - [ ] **Step 4: Commit**
 
@@ -347,7 +349,7 @@ const go = (path: string) => {
 
 - [ ] **Step 3: 验证**
 
-`pnpm type-check` 零报错、`pnpm lint` 通过。组件尚未挂载，编译期不报错即达成本任务；浏览器验证在 T4 挂载后进行。
+`pnpm type-check` src/ 零报错、`pnpm lint` 通过。组件尚未挂载，编译期不报错即达成本任务；浏览器验证在 T4 挂载后进行。
 
 - [ ] **Step 4: Commit**
 
@@ -437,7 +439,7 @@ index 根 class `pb-200rpx` → `pb-260rpx`；review 根 `pb-160rpx` → `pb-260
 
 - [ ] **Step 5: 验证（本计划第一次完整走查）**
 
-`pnpm type-check` 零报错、`pnpm lint` 通过。H5 走查：
+`pnpm type-check` src/ 零报错、`pnpm lint` 通过。H5 走查：
 
 1. 注册/登录 → 800ms 后进首页不白屏（reLaunch 生效）
 2. 底部自绘 tabBar：选中项黑、未选灰；三 tab 互切正常，复习页标记栏不与 tabBar 重叠
@@ -1015,5 +1017,5 @@ git commit -m "style(src): 旧色值与楷体残留清零"
 ## 自检记录（writing-plans self-review 已做）
 
 - spec 覆盖：§1 tokens→T1；§2 chrome→T3/T4；§3 组件→T2/T3；§4 逐页→T5–T10；§5 管线→T11；§7 验收→T4/T5–T11 内嵌 + T12；§8 不做项未越界（无新依赖、无 PNG 删除、无动效）
-- 已知偏离 spec 两处（均有理由）：onboarding 不挂透明 NavBar（全屏 swiper 冲突，跳过即出口）；PsButton secondary 加 hairline 描边（白 canvas 上无边白钮不可辨）
+- 已知偏离 spec 三处（均有理由）：onboarding 不挂透明 NavBar（全屏 swiper 冲突，跳过即出口）；PsButton secondary 加 hairline 描边（白 canvas 上无边白钮不可辨）；onboarding 末屏 CTA「开始通关」保持裸 `view` + `bg-[#0D0D0D]` 而未换 PsButton（终审 Minor-3 正名：它是绝对定位的固定 400rpx 宽胶囊，PsButton 的 `block`/`size` 体系管不到这种「居中悬浮 + 自身宽度」排布，而该页又是唯一无登录态的入口页，改造风险大于收益；视觉基线已与设计语言一致——黑底白字 44rpx 圆角）
 - 任务顺序即依赖序；T4 起页面进入「chrome 新、内容旧」过渡态，属预期（spec 允许逐页推进）
