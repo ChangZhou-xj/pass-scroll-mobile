@@ -108,7 +108,7 @@
 
 ### 3.1 `PsButton.vue`（新组件）
 
-- Props：`variant: "primary" | "secondary"`（黑 pill / 白 pill）、`size: "md" | "lg"`、`block?: boolean`（全宽）、`disabled?: boolean`；emit `click`
+- Props：`variant: "primary" | "secondary"`（黑 pill / 白 pill）、`size: "sm" | "md" | "lg"`、`block?: boolean`（全宽）、`disabled?: boolean`；emit `click`
 - primary：bg `ink` 字白；secondary：白底 ink 字（文档 button-secondary 无描边）；disabled 为 primary 降至 `hairline` 底 + `secondaryText` 字
 - 全 App 按钮收口到此组件：登录/注册提交、空态 CTA、复习标记、版本恢复、保存、确认弹窗替代（uni.showModal 保留系统样式，不强换）
 
