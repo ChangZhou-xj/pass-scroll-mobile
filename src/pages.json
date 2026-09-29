@@ -13,40 +13,40 @@
       "style": {
         "navigationBarTitleText": "首页",
         "enablePullDownRefresh": true,
-        "backgroundColor": "#F7F8FA",
-        "backgroundColorBottom": "#F7F8FA"
+        "backgroundColor": "#FFFFFF",
+        "backgroundColorBottom": "#FFFFFF"
       }
     },
     {
       "path": "pages/review/index",
       "style": {
         "navigationBarTitleText": "随机复习",
-        "backgroundColor": "#F7F8FA",
-        "backgroundColorBottom": "#F7F8FA"
+        "backgroundColor": "#FFFFFF",
+        "backgroundColorBottom": "#FFFFFF"
       }
     },
     {
       "path": "pages/profile/index",
       "style": {
         "navigationBarTitleText": "我的",
-        "backgroundColor": "#F7F8FA",
-        "backgroundColorBottom": "#F7F8FA"
+        "backgroundColor": "#FFFFFF",
+        "backgroundColorBottom": "#FFFFFF"
       }
     },
     {
       "path": "pages/onboarding/index",
       "style": {
         "navigationBarTitleText": " ",
-        "backgroundColor": "#F7F8FA",
-        "backgroundColorBottom": "#F7F8FA"
+        "backgroundColor": "#FFFFFF",
+        "backgroundColorBottom": "#FFFFFF"
       }
     },
     {
       "path": "pages/login/index",
       "style": {
         "navigationBarTitleText": "登录",
-        "backgroundColor": "#F7F8FA",
-        "backgroundColorBottom": "#F7F8FA"
+        "backgroundColor": "#FFFFFF",
+        "backgroundColorBottom": "#FFFFFF"
       }
     },
     {
@@ -59,16 +59,16 @@
       "path": "pages/versions/index",
       "style": {
         "navigationBarTitleText": "历史版本",
-        "backgroundColor": "#F7F8FA",
-        "backgroundColorBottom": "#F7F8FA"
+        "backgroundColor": "#FFFFFF",
+        "backgroundColorBottom": "#FFFFFF"
       }
     },
     {
       "path": "pages/password/index",
       "style": {
         "navigationBarTitleText": "修改密码",
-        "backgroundColor": "#F7F8FA",
-        "backgroundColorBottom": "#F7F8FA"
+        "backgroundColor": "#FFFFFF",
+        "backgroundColorBottom": "#FFFFFF"
       }
     },
     {
@@ -81,8 +81,8 @@
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "通关秘籍",
-    "navigationBarBackgroundColor": "#F8F8F8",
-    "backgroundColor": "#F8F8F8"
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#FFFFFF"
   },
   "tabBar": {
     "color": "#8C8C8C",

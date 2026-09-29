@@ -9,4 +9,8 @@ onLaunch(() => {
   recordStore.init();
 });
 </script>
-<style></style>
+<style>
+page {
+  font-family: -apple-system, "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", sans-serif;
+}
+</style>
