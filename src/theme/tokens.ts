@@ -1,5 +1,7 @@
 /** 设计 token 唯一来源（DESIGN.md 落地，见 spec 2026-09-28-design-language-restyle）
  * 模板静态 class 的 hex 必须与本表一致；动态 :style 一律从这里取值 */
+import type { Mastery } from "@/types/record";
+
 export const T = {
   ink: "#0D0D0D",
   onPrimary: "#FFFFFF",
@@ -27,3 +29,10 @@ export const T = {
   codeBlock: "#16181D",
   codeBlockText: "#e6e6e6",
 } as const;
+
+/** 掌握度徽章 :style 字符串（描边+文字同色，色作 glyph 不作面）；NONE 不应调用
+ * （三处消费：RecordCard / 详情页标题行 / 复习页题干行，勿再在页面里各写一份三元） */
+export const masteryStyle = (mastery: Mastery): string => {
+  const c = mastery === "MASTERED" ? T.masteryGreen : T.masteryAmber;
+  return `color:${c};border-color:${c};`;
+};

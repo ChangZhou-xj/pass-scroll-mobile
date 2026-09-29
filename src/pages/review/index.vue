@@ -15,10 +15,7 @@
           <text
             v-if="current.mastery !== 'NONE'"
             class="ml-12rpx shrink-0 rounded-full border-2rpx border-solid px-16rpx py-2rpx text-20rpx"
-            :style="{
-              color: current.mastery === 'MASTERED' ? '#42B883' : '#F0B429',
-              borderColor: current.mastery === 'MASTERED' ? '#42B883' : '#F0B429',
-            }">
+            :style="masteryStyle(current.mastery)">
             {{ current.mastery === "MASTERED" ? "已掌握" : "复习中" }}
           </text>
         </view>
@@ -72,7 +69,7 @@
            原 fallback 50px 永不生效；bottom/zIndex 走 inline style（rpx 由 uni 归一化换算，同首页 FAB），并压过同为 z-50 的 CustomTabBar -->
       <view
         v-if="showMark"
-        class="review-mark-bar fixed left-0 right-0 border-0 border-t border-solid border-[#E3E3E6] bg-white px-30rpx py-16rpx"
+        class="review-mark-bar fixed left-0 right-0 border-0 border-t-2rpx border-solid border-[#E3E3E6] bg-white px-30rpx py-16rpx"
         :style="{ bottom: 'calc(102rpx + env(safe-area-inset-bottom))', zIndex: 61 }">
         <view class="flex">
           <view class="mr-20rpx flex-1">
@@ -107,6 +104,7 @@ import type { Mastery, RecordItem } from "@/types/record";
 import { onShow } from "@dcloudio/uni-app";
 import { useRecordStore } from "@/store/record";
 import { useUserStore } from "@/store/modules/user";
+import { masteryStyle } from "@/theme/tokens";
 import { parseNote } from "@/utils/markdown";
 
 // 本项目 pinia setup store 的 state/computed 在外部类型层未解包（见首页同模式），

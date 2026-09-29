@@ -22,10 +22,7 @@
         <text
           v-if="record.mastery !== 'NONE'"
           class="ml-12rpx shrink-0 rounded-full border-2rpx border-solid px-16rpx py-2rpx text-20rpx"
-          :style="{
-            color: record.mastery === 'MASTERED' ? '#42B883' : '#F0B429',
-            borderColor: record.mastery === 'MASTERED' ? '#42B883' : '#F0B429',
-          }">
+          :style="masteryStyle(record.mastery)">
           {{ record.mastery === "MASTERED" ? "已掌握" : "复习中" }}
         </text>
         <text class="ml-16rpx shrink-0 font-mono text-20rpx tracking-[2rpx] text-[#67676C]">
@@ -75,6 +72,7 @@ import type { RecordItem } from "@/types/record";
 import { onLoad, onShow } from "@dcloudio/uni-app";
 import { getRecord } from "@/api/record";
 import { useRecordStore } from "@/store/record";
+import { masteryStyle } from "@/theme/tokens";
 import { formatTime } from "@/utils/format";
 import { parseNote } from "@/utils/markdown";
 

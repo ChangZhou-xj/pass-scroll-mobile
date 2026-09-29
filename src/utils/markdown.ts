@@ -44,7 +44,7 @@ const TAG_STYLES: Record<string, string> = {
   th: "border:1px solid #E3E3E6;background:#F4F5F7;padding:12rpx 16rpx;font-weight:600;color:#0D0D0D;",
   td: "border:1px solid #E3E3E6;padding:12rpx 16rpx;color:#0D0D0D;",
   img: "max-width:100%;border-radius:16rpx;",
-  del: "text-decoration:line-through;color:#67676C;",
+  del: "text-decoration:line-through;color:#0D0D0D;",
 };
 
 const PRE_STYLE =

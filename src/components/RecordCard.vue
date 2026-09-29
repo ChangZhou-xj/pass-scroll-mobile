@@ -6,7 +6,7 @@
       <text
         v-if="record.mastery !== 'NONE'"
         class="ml-12rpx shrink-0 rounded-full border-2rpx border-solid px-16rpx py-2rpx text-20rpx"
-        :style="masteryStyle">
+        :style="masteryStyle(record.mastery)">
         {{ masteryText }}
       </text>
     </view>
@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 import type { RecordItem } from "@/types/record";
-import { T } from "@/theme/tokens";
+import { masteryStyle } from "@/theme/tokens";
 import { formatTime, plainText } from "@/utils/format";
 
 const props = defineProps<{ record: RecordItem }>();
@@ -40,10 +40,6 @@ const emit = defineEmits<{
 const summary = computed(() => plainText(props.record.content));
 
 const masteryText = computed(() => (props.record.mastery === "MASTERED" ? "已掌握" : "复习中"));
-const masteryStyle = computed(() => {
-  const c = props.record.mastery === "MASTERED" ? T.masteryGreen : T.masteryAmber;
-  return `border-color:${c};color:${c};`;
-});
 
 const handleClick = () => {
   emit("click", props.record);
