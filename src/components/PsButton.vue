@@ -1,5 +1,8 @@
 <template>
-  <view :class="block ? 'w-full flex-center' : 'flex-center'" :style="boxStyle" @click="onClick">
+  <view
+    :class="block ? 'w-full inline-flex justify-center items-center' : 'inline-flex justify-center items-center'"
+    :style="boxStyle"
+    @click="onClick">
     <text :style="labelStyle"><slot /></text>
   </view>
 </template>
@@ -24,7 +27,7 @@ const FONT_SIZES = { sm: "26rpx", md: "30rpx", lg: "30rpx" } as const;
 
 // secondary 加 hairline 描边：文档的无边白钮依赖彩底对比，App 白 canvas 上需要边缘
 const boxStyle = computed(() => {
-  const base = `height:${HEIGHTS[props.size]};border-radius:9999rpx;padding:0 48rpx;`;
+  const base = `height:${HEIGHTS[props.size]};border-radius:9999rpx;padding:0 48rpx;box-sizing:border-box;`;
   if (props.disabled) return `${base}background:${T.hairline};`;
   return props.variant === "primary"
     ? `${base}background:${T.ink};`
