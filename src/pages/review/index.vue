@@ -64,11 +64,12 @@
       </view>
 
       <!-- 掌握度标记：答案展开后浮现，固定底部双大按钮 -->
-      <!-- zIndex 走内联样式：自绘 CustomTabBar 同为 z-50，标记栏需稳定压过它（App/MP 无 H5 上浮避让） -->
+      <!-- 上浮避让改用自绘栏高常量：--tab-bar-height 在 H5 被 uni 框架定义为 0px，原 fallback 50px 永不生效；
+           bottom/zIndex 走 inline style（rpx 由 uni 归一化换算，同首页 FAB），并压过同为 z-50 的 CustomTabBar -->
       <view
         v-if="showMark"
-        class="review-mark-bar fixed bottom-0 left-0 right-0 border-t border-solid border-[#E3E3E6] bg-white px-30rpx py-16rpx"
-        :style="{ zIndex: 61 }">
+        class="review-mark-bar fixed left-0 right-0 border-t border-solid border-[#E3E3E6] bg-white px-30rpx py-16rpx"
+        :style="{ bottom: 'calc(100rpx + env(safe-area-inset-bottom))', zIndex: 61 }">
         <view class="flex">
           <view class="mr-20rpx flex-1">
             <PsButton variant="secondary" size="lg" block @click="mark('LEARNING')">仍需复习</PsButton>
@@ -212,17 +213,3 @@ onShow(async () => {
   showMark.value = false;
 });
 </script>
-
-<style scoped>
-/* #ifdef H5 */
-/* 自绘 tabBar 内容区 100rpx（H5=50px），标记栏上浮避让；
-   style 块禁 rpx，160rpx 按 375 基线换算为 80px */
-.review-mark-bar {
-  bottom: calc(var(--tab-bar-height, 50px) + env(safe-area-inset-bottom));
-}
-
-.review-page {
-  padding-bottom: calc(80px + var(--tab-bar-height, 50px) + env(safe-area-inset-bottom));
-}
-/* #endif */
-</style>
