@@ -1,6 +1,6 @@
 <template>
   <view
-    class="fixed bottom-0 left-0 right-0 z-50 border-t-2rpx border-solid border-[#E3E3E6] bg-white"
+    class="fixed bottom-0 left-0 right-0 z-50 border-0 border-t-2rpx border-solid border-[#E3E3E6] bg-white"
     :style="{ paddingBottom: 'env(safe-area-inset-bottom)' }">
     <view class="h-100rpx flex">
       <view
