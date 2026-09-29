@@ -80,12 +80,10 @@ import { onPullDownRefresh, onShow } from "@dcloudio/uni-app";
 import { useRecordStore } from "@/store/record";
 import { useUserStore } from "@/store/modules/user";
 import { T } from "@/theme/tokens";
+import { getStatusBarPx } from "@/utils/system";
 
-// H5 无原生状态栏恒 0；App/MP 端 statusBarHeight 异常为 0 时兜底 20px（本页无 NavBar，需自行避让）
-let statusBarPx = 0;
-// #ifndef H5
-statusBarPx = uni.getSystemInfoSync().statusBarHeight || 20;
-// #endif
+// 本页无 NavBar，需自行避让状态栏
+const statusBarPx = getStatusBarPx();
 
 // 本项目 pinia setup store 的 state/computed 在外部类型层未解包（见 user.ts 基线注释），
 // 经 unknown 转换为运行时实际的解包形态，页面内按运行时结构消费。

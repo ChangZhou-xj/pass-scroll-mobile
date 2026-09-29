@@ -33,11 +33,10 @@
 </template>
 
 <script setup lang="ts">
-// 本页无 NavBar（引导页设计如此），App/MP 端需自行避让状态栏；H5 恒为 0
-let statusBarPx = 0;
-// #ifndef H5
-statusBarPx = uni.getSystemInfoSync().statusBarHeight || 20;
-// #endif
+import { getStatusBarPx } from "@/utils/system";
+
+// 本页无 NavBar（引导页设计如此），App/MP 端需自行避让状态栏
+const statusBarPx = getStatusBarPx();
 
 const screens = [
   { emoji: "📝", title: "随手记", desc: "面试题、知识点，markdown 全支持", color: "#0D0D0D" },

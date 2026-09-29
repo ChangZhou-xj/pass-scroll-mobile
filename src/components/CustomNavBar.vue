@@ -17,6 +17,7 @@
 
 <script setup lang="ts">
 import { T } from "@/theme/tokens";
+import { getStatusBarPx } from "@/utils/system";
 
 const props = withDefaults(defineProps<{ title?: string; showBack?: boolean; transparent?: boolean }>(), {
   title: "",
@@ -24,11 +25,7 @@ const props = withDefaults(defineProps<{ title?: string; showBack?: boolean; tra
   transparent: false,
 });
 
-// H5 无原生状态栏恒 0；App/MP 端 statusBarHeight 异常为 0 时兜底 20px
-let statusBarPx = 0;
-// #ifndef H5
-statusBarPx = uni.getSystemInfoSync().statusBarHeight || 20;
-// #endif
+const statusBarPx = getStatusBarPx();
 
 const canGoBack = getCurrentPages().length > 1;
 
