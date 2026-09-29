@@ -1,5 +1,5 @@
 <template>
-  <view class="min-h-screen bg-white pb-120rpx">
+  <view class="min-h-screen bg-white" :style="{ paddingBottom: 'calc(120rpx + env(safe-area-inset-bottom))' }">
     <CustomNavBar title="详情" show-back />
 
     <!-- 正文卡片：白卡 + hairline 描边（DESIGN.md feature-card-light） -->

@@ -22,8 +22,8 @@ export const T = {
   masteryAmber: "#F0B429",
   danger: "#D9303E",
   secondaryText: "#67676C",
-  // 代码块配色登记：markdown.ts 的 PRE_STYLE/CODE_IN_PRE_STYLE 仍写字面量（rich-text 只吃内联字符串，无法引用 T），
-  // 此处留档以便改色时两处对齐
+  // 代码块配色登记：markdown.ts:51-53 的 PRE_STYLE/CODE_IN_PRE_STYLE 仍写字面量（rich-text 只吃内联字符串，无法引用 T），
+  // 此处留档以便改色时两处对齐；值与那两行逐字符一致（含小写）
   codeBlock: "#16181D",
-  codeBlockText: "#E6E6E6",
+  codeBlockText: "#e6e6e6",
 } as const;

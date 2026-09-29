@@ -1,5 +1,5 @@
 <template>
-  <view class="min-h-screen bg-white pb-140rpx">
+  <view class="min-h-screen bg-white" :style="{ paddingBottom: 'calc(140rpx + env(safe-area-inset-bottom))' }">
     <CustomNavBar title="历史版本" show-back />
 
     <!-- 列表态：cream 时间线块 + hairline 描边行卡 -->

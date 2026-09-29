@@ -1,5 +1,9 @@
 <template>
-  <view class="review-page min-h-screen bg-white pb-260rpx">
+  <!-- 底衬需同时避让 tabBar(102rpx+inset) 与其上的掌握度标记栏(≈134rpx)，且随 inset 同步增长，
+       否则刘海机型答案末段会被固定栏永久盖住（同 detail/versions/password 的复合底衬） -->
+  <view
+    class="review-page min-h-screen bg-white"
+    :style="{ paddingBottom: 'calc(300rpx + env(safe-area-inset-bottom))' }">
     <CustomNavBar title="复习" />
 
     <!-- 有当前题 -->

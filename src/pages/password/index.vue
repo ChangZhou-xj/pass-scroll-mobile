@@ -1,5 +1,5 @@
 <template>
-  <view class="min-h-screen bg-white pb-160rpx">
+  <view class="min-h-screen bg-white" :style="{ paddingBottom: 'calc(160rpx + env(safe-area-inset-bottom))' }">
     <CustomNavBar title="修改密码" show-back />
 
     <!-- 表单卡片 -->

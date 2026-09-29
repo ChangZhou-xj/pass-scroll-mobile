@@ -1,5 +1,12 @@
 <template>
-  <view class="min-h-screen bg-white px-30rpx pb-260rpx" :style="{ paddingTop: statusBarPx + 'px' }">
+  <!-- 底衬随 safe-area 增长，与 FAB（bottom:180rpx+inset，高 120rpx → 顶缘 300rpx+inset）保持设计基线对齐：
+       260rpx 底衬 + 末张卡片的 p-40rpx 内衬 = 300rpx，卡片底部 tag/日期行正好擦着 FAB 上缘 -->
+  <view
+    class="min-h-screen bg-white px-30rpx"
+    :style="{
+      paddingTop: statusBarPx + 'px',
+      paddingBottom: 'calc(260rpx + env(safe-area-inset-bottom))',
+    }">
     <!-- 品牌 hero：lilac 签名色块 -->
     <view class="mt-24rpx rounded-48rpx bg-[#E7E3FA] px-48rpx pb-40rpx pt-56rpx">
       <text class="block font-mono text-22rpx uppercase tracking-[2rpx] text-[#67676C]">PASS SCROLL · NOTES</text>

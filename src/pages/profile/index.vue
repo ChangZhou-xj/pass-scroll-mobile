@@ -1,5 +1,5 @@
 <template>
-  <view class="min-h-screen bg-white pb-200rpx">
+  <view class="min-h-screen bg-white" :style="{ paddingBottom: 'calc(220rpx + env(safe-area-inset-bottom))' }">
     <CustomNavBar title="我的" />
 
     <template v-if="isLoggedIn">
