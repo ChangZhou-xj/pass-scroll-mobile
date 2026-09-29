@@ -1,34 +1,34 @@
 <template>
-  <view class="min-h-screen bg-[#F7F8FA] pb-160rpx">
+  <view class="min-h-screen bg-white pb-160rpx">
     <CustomNavBar title="修改密码" show-back />
 
     <!-- 表单卡片 -->
-    <view class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx">
+    <view class="mx-30rpx mt-24rpx rounded-48rpx border-2rpx border-solid border-[#E3E3E6] bg-white p-30rpx">
       <input
         v-model="oldPassword"
-        class="h-88rpx w-full border-b border-solid border-[#EEEEEE] text-28rpx text-[#3C3C43]"
+        class="h-88rpx w-full border-0 border-b-2rpx border-solid border-[#E3E3E6] text-28rpx text-[#0D0D0D]"
         password
         placeholder="旧密码"
         placeholder-style="color: #67676C;" />
       <input
         v-model="newPassword"
-        class="mt-24rpx h-88rpx w-full border-b border-solid border-[#EEEEEE] text-28rpx text-[#3C3C43]"
+        class="mt-24rpx h-88rpx w-full border-0 border-b-2rpx border-solid border-[#E3E3E6] text-28rpx text-[#0D0D0D]"
         password
         placeholder="8-64位，含字母与数字"
         placeholder-style="color: #67676C;" />
       <input
         v-model="confirmPassword"
-        class="mt-24rpx h-88rpx w-full text-28rpx text-[#3C3C43]"
+        class="mt-24rpx h-88rpx w-full text-28rpx text-[#0D0D0D]"
         password
         placeholder="确认新密码"
         placeholder-style="color: #67676C;" />
     </view>
 
-    <!-- 底部确认按钮 -->
-    <view class="fixed bottom-0 left-0 right-0 border-t border-solid border-[#EEEEEE] bg-white px-30rpx py-16rpx">
-      <view class="h-88rpx flex-center rounded-44rpx bg-[#3E63DD]" @click="handleSubmit">
-        <text class="text-30rpx text-white">确认修改</text>
-      </view>
+    <!-- 底部确认按钮：fixed 白底栏保留，加 safe-area 内联避让（py-16rpx 会被 paddingBottom 覆盖属预期行为） -->
+    <view
+      class="fixed bottom-0 left-0 right-0 border-0 border-t-2rpx border-solid border-[#E3E3E6] bg-white px-30rpx py-16rpx"
+      :style="{ paddingBottom: 'env(safe-area-inset-bottom)' }">
+      <PsButton size="lg" block @click="handleSubmit">确认修改</PsButton>
     </view>
   </view>
 </template>

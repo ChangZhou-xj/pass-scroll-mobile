@@ -1,53 +1,60 @@
 <template>
-  <view class="min-h-screen bg-[#F7F8FA] pb-160rpx">
-    <CustomNavBar :title="navTitle" show-back />
+  <!-- pb-40rpx：底部固定保存栏已删除（保存入口移入导航右插槽），不再需要为固定栏预留 160rpx 避让 -->
+  <view class="min-h-screen bg-white pb-40rpx">
+    <CustomNavBar :title="navTitle" show-back>
+      <template #right>
+        <PsButton size="sm" :disabled="saving" @click="handleSave">保存</PsButton>
+      </template>
+    </CustomNavBar>
 
     <!-- 编辑/预览切换（颜色走 :style：动态 class 中的 arbitrary value 不会被 transformerClass 转换） -->
-    <view class="mx-30rpx mt-24rpx flex h-64rpx rounded-32rpx bg-[#EEEEEE] p-4rpx">
+    <view class="mx-30rpx mt-24rpx flex h-72rpx rounded-full bg-[#F4F5F7] p-6rpx">
       <view
-        class="flex-1 flex-center rounded-28rpx"
-        :style="{ background: mode === 'edit' ? '#3E63DD' : 'transparent' }"
+        class="flex-1 flex-center rounded-full"
+        :style="{ background: mode === 'edit' ? T.ink : 'transparent' }"
         @click="mode = 'edit'">
-        <text class="text-26rpx" :style="{ color: mode === 'edit' ? '#FFFFFF' : '#67676C' }">编辑</text>
+        <text class="text-26rpx" :style="{ color: mode === 'edit' ? T.onPrimary : T.ink }">编辑</text>
       </view>
       <view
-        class="flex-1 flex-center rounded-28rpx"
-        :style="{ background: mode === 'preview' ? '#3E63DD' : 'transparent' }"
+        class="flex-1 flex-center rounded-full"
+        :style="{ background: mode === 'preview' ? T.ink : 'transparent' }"
         @click="mode = 'preview'">
-        <text class="text-26rpx" :style="{ color: mode === 'preview' ? '#FFFFFF' : '#67676C' }">预览</text>
+        <text class="text-26rpx" :style="{ color: mode === 'preview' ? T.onPrimary : T.ink }">预览</text>
       </view>
     </view>
 
     <!-- 表单卡片 -->
-    <view v-if="mode === 'edit'" class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx">
+    <view
+      v-if="mode === 'edit'"
+      class="mx-30rpx mt-24rpx rounded-48rpx border-2rpx border-solid border-[#E3E3E6] bg-white p-30rpx">
       <!-- 标题 -->
       <input
         v-model="title"
-        class="h-80rpx w-full border-b border-solid border-[#EEEEEE] text-32rpx text-[#3C3C43]"
+        class="h-80rpx w-full border-0 border-b-2rpx border-solid border-[#E3E3E6] text-32rpx text-[#0D0D0D]"
         placeholder="标题"
         placeholder-style="color: #67676C;" />
 
       <!-- 内容 -->
       <textarea
         v-model="content"
-        class="mt-24rpx min-h-400rpx w-full text-28rpx leading-7 text-[#3C3C43]"
+        class="mt-24rpx min-h-400rpx w-full text-28rpx leading-7 text-[#0D0D0D]"
         auto-height
         placeholder="支持 markdown 语法…"
         placeholder-style="color: #67676C;" />
 
       <!-- 标签区 -->
-      <view class="mt-24rpx flex flex-wrap border-t border-solid border-[#EEEEEE] pt-24rpx">
+      <view class="mt-24rpx flex flex-wrap border-0 border-t-2rpx border-solid border-[#E3E3E6] pt-24rpx">
         <view
           v-for="(tag, index) in tags"
           :key="tag"
-          class="mr-12rpx mb-8rpx flex items-center rounded-12rpx bg-[#3E63DD]/10 px-16rpx py-4rpx">
-          <text class="text-22rpx text-[#3E63DD]">{{ tag }}</text>
-          <text class="ml-8rpx text-22rpx text-[#3E63DD]" @click="removeTag(index)">×</text>
+          class="mr-12rpx mb-8rpx flex items-center rounded-full bg-[#F4F5F7] px-16rpx py-4rpx">
+          <text class="text-22rpx text-[#0D0D0D]">{{ tag }}</text>
+          <text class="ml-8rpx text-22rpx text-[#0D0D0D]" @click="removeTag(index)">×</text>
         </view>
       </view>
       <input
         v-model="tagInput"
-        class="mt-8rpx h-64rpx w-full text-26rpx text-[#3C3C43]"
+        class="mt-8rpx h-64rpx w-full text-26rpx text-[#0D0D0D]"
         placeholder="输入标签后确认添加"
         placeholder-style="color: #67676C;"
         confirm-type="done"
@@ -55,17 +62,19 @@
     </view>
 
     <!-- 预览卡片 -->
-    <view v-else class="mx-30rpx mt-24rpx rounded-24rpx bg-white p-30rpx">
-      <text class="note-title block text-40rpx font-bold text-[#3C3C43]">{{ title.trim() || "未命名" }}</text>
+    <view v-else class="mx-30rpx mt-24rpx rounded-48rpx border-2rpx border-solid border-[#E3E3E6] bg-white p-30rpx">
+      <text class="block text-40rpx font-extrabold tracking-[-1rpx] text-[#0D0D0D]">
+        {{ title.trim() || "未命名" }}
+      </text>
       <view v-if="tags.length" class="mt-20rpx flex flex-wrap">
         <text
           v-for="tag in tags"
           :key="tag"
-          class="mr-12rpx mb-8rpx rounded-12rpx bg-[#3E63DD]/10 px-16rpx py-4rpx text-22rpx text-[#3E63DD]">
+          class="mr-12rpx mb-8rpx rounded-full bg-[#F4F5F7] px-16rpx py-4rpx text-22rpx text-[#0D0D0D]">
           {{ tag }}
         </text>
       </view>
-      <view class="my-24rpx h-1rpx bg-[#EEEEEE]" />
+      <view class="my-24rpx h-1rpx bg-[#E3E3E6]" />
       <template v-if="content.trim()">
         <view v-for="(seg, index) in previewSegments" :key="index">
           <rich-text v-if="seg.type === 'html'" :nodes="seg.html" />
@@ -76,13 +85,6 @@
         <text class="text-26rpx text-[#67676C]">暂无内容，切回编辑写点什么吧</text>
       </view>
     </view>
-
-    <!-- 底部保存按钮 -->
-    <view class="fixed bottom-0 left-0 right-0 border-t border-solid border-[#EEEEEE] bg-white px-30rpx py-16rpx">
-      <view class="h-88rpx flex-center rounded-44rpx bg-[#3E63DD]" @click="handleSave">
-        <text class="text-30rpx text-white">保存</text>
-      </view>
-    </view>
   </view>
 </template>
 
@@ -91,6 +93,7 @@ import type { RecordItem } from "@/types/record";
 import { onLoad } from "@dcloudio/uni-app";
 import { getRecord } from "@/api/record";
 import { useRecordStore } from "@/store/record";
+import { T } from "@/theme/tokens";
 import { parseNote } from "@/utils/markdown";
 
 // 本项目 pinia setup store 的 state/computed 在外部类型层未解包（见首页同模式），
@@ -211,9 +214,3 @@ onLoad((query) => {
   }
 });
 </script>
-
-<style scoped>
-.note-title {
-  font-family: "STKaiti", "KaiTi", "Kaiti SC", "SimSun", serif;
-}
-</style>
