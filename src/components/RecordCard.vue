@@ -1,32 +1,35 @@
 <template>
-  <view class="rounded-24rpx bg-white p-30rpx mb-24rpx shadow-[0_4rpx_24rpx_rgba(62,99,221,0.06)]" @click="handleClick">
+  <view class="mb-24rpx rounded-48rpx border-2rpx border-solid border-[#E3E3E6] bg-white p-40rpx" @click="handleClick">
     <view class="flex items-center">
       <text v-if="record.isPinned" class="mr-8rpx text-32rpx">📌</text>
-      <text class="truncate text-32rpx font-bold text-[#3C3C43]">{{ record.title }}</text>
+      <text class="truncate text-32rpx font-semibold tracking-[-1rpx] text-[#0D0D0D]">{{ record.title }}</text>
       <text
         v-if="record.mastery !== 'NONE'"
-        class="ml-12rpx shrink-0 text-20rpx"
-        :style="{ color: record.mastery === 'MASTERED' ? '#42B883' : '#F0B429' }">
-        {{ record.mastery === "MASTERED" ? "已掌握" : "复习中" }}
+        class="ml-12rpx shrink-0 rounded-full border-2rpx border-solid px-16rpx py-2rpx text-20rpx"
+        :style="masteryStyle">
+        {{ masteryText }}
       </text>
     </view>
-    <text class="line-clamp-2 mt-12rpx text-26rpx text-[#67676C]">{{ summary }}</text>
+    <text class="line-clamp-2 mt-12rpx text-26rpx text-[#0D0D0D]">{{ summary }}</text>
     <view class="mt-20rpx flex items-start justify-between">
       <view class="flex flex-1 flex-wrap">
         <text
           v-for="tag in record.tags"
           :key="tag"
-          class="mr-12rpx mb-8rpx rounded-12rpx bg-[#3E63DD]/10 px-16rpx py-4rpx text-22rpx text-[#3E63DD]">
+          class="mr-12rpx mb-8rpx rounded-full bg-[#F4F5F7] px-16rpx py-4rpx text-22rpx text-[#0D0D0D]">
           {{ tag }}
         </text>
       </view>
-      <text class="ml-16rpx shrink-0 text-22rpx text-[#67676C]">{{ formatTime(record.updatedAt) }}</text>
+      <text class="ml-16rpx shrink-0 font-mono text-20rpx tracking-[2rpx] text-[#67676C]">
+        {{ formatTime(record.updatedAt) }}
+      </text>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import type { RecordItem } from "@/types/record";
+import { T } from "@/theme/tokens";
 import { formatTime, plainText } from "@/utils/format";
 
 const props = defineProps<{ record: RecordItem }>();
@@ -35,6 +38,12 @@ const emit = defineEmits<{
 }>();
 
 const summary = computed(() => plainText(props.record.content));
+
+const masteryText = computed(() => (props.record.mastery === "MASTERED" ? "已掌握" : "复习中"));
+const masteryStyle = computed(() => {
+  const c = props.record.mastery === "MASTERED" ? T.masteryGreen : T.masteryAmber;
+  return `border-color:${c};color:${c};`;
+});
 
 const handleClick = () => {
   emit("click", props.record);
