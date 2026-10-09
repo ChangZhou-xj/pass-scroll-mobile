@@ -17,12 +17,12 @@ import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 import { TransformInterceptor } from "./common/interceptors/transform.interceptor";
+import { validateEnv } from "./config/env.validation";
 
 async function bootstrap() {
-  // 生产环境 fail-fast：禁止在缺省 JWT_SECRET 时静默回退到 auth.module 中的弱兜底密钥
-  if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET 未配置（生产环境必须设置）");
-  }
+  // 启动前"安检"：任何必需环境变量缺失/不合法都在这里 fail-fast，并一次性列出全部问题
+  // （替代了原先"只检查生产环境 JWT_SECRET 是否存在"的手工判断，见 config/env.validation.ts）
+  const env = validateEnv();
   const app = await NestFactory.create(AppModule);
   // 允许跨域：前端 dev server（5173 等端口）与后端（3100）不同源，浏览器要求服务端显式放行
   app.enableCors();
@@ -33,7 +33,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor());
   // 全局过滤器：把抛出的异常统一包装成 { code, message, data: null }
   app.useGlobalFilters(new HttpExceptionFilter());
-  const port = process.env.PORT || 3100;
+  const port = env.PORT;
   await app.listen(port);
   console.log(`server running at http://localhost:${port}`);
 }
