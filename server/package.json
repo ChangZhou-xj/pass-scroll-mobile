@@ -9,7 +9,8 @@
     "test": "jest",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prisma:migrate": "prisma migrate dev",
-    "import:md": "tsx scripts/import-markdown.ts"
+    "import:md": "tsx scripts/import-markdown.ts",
+    "crawl:github": "tsx scripts/crawl-github.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.15",

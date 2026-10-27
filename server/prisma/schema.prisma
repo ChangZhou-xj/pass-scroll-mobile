@@ -42,10 +42,12 @@ model Record {
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   version   Int         @default(1) // 内容版本号：每次改标题/正文 +1，乐观锁与快照都靠它
   mastery   Mastery     @default(NONE) // 掌握度（见下方 enum 与 records/mastery-state.ts 状态机）
+  sourceUrl String?     @db.VarChar(512) // 远程来源 URL（GitHub 文档抓取用）；手写笔记为 null
   snapshots RecordSnapshot[] // 一对多：每次内容变更前的"修改前快照"
   tags      RecordTag[] // 多对多桥接：一条笔记可挂多个标签
 
   @@index([userId, updatedAt]) // 列表页查询（某用户、按更新时间倒序）走这个索引
+  @@unique([userId, sourceUrl]) // 抓取幂等主键：同一用户同一来源只许一行（MySQL 唯一索引允许多个 NULL，手写笔记不受影响）
 }
 
 // 标签表：标签属于用户（@@unique([userId, name]) 保证同一用户内不重名）
