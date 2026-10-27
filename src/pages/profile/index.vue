@@ -71,8 +71,17 @@
         <text class="mt-8rpx font-mono text-22rpx text-[#67676C]">v0.1.0</text>
       </view>
 
-      <!-- 修改密码 + 退出登录：一张白卡两行（退出为红字行） -->
+      <!-- 我的简历 + 修改密码 + 退出登录：一张白卡三行（退出为红字行） -->
       <view class="mx-30rpx mt-40rpx rounded-48rpx border-2rpx border-solid border-[#E3E3E6] bg-white px-30rpx">
+        <view
+          class="h-100rpx flex items-center justify-between border-0 border-b-2rpx border-solid border-[#EFEFF1]"
+          @click="goResume">
+          <text class="text-28rpx text-[#0D0D0D]">我的简历</text>
+          <view class="flex items-center">
+            <text class="font-mono text-20rpx tracking-[2rpx] text-[#67676C]">PDF</text>
+            <text class="ml-8rpx text-28rpx text-[#67676C]">›</text>
+          </view>
+        </view>
         <view
           class="h-100rpx flex items-center justify-between border-0 border-b-2rpx border-solid border-[#EFEFF1]"
           @click="goPassword">
@@ -189,6 +198,11 @@ const goLogin = () => {
 
 const goPassword = () => {
   uni.navigateTo({ url: "/pages/password/index" });
+};
+
+// 简历预览页自行处理登录守卫与 PDF 打开
+const goResume = () => {
+  uni.navigateTo({ url: "/pages/resume/index" });
 };
 
 onShow(() => {

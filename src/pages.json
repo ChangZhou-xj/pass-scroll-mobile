@@ -28,6 +28,12 @@
       }
     },
     {
+      "path": "pages/resume/index",
+      "style": {
+        "backgroundColor": "#FFFFFF"
+      }
+    },
+    {
       "path": "pages/onboarding/index",
       "style": {
         "backgroundColor": "#FFFFFF"
