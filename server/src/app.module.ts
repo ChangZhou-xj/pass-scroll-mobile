@@ -16,11 +16,12 @@ import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { AppController } from "./app.controller";
 import { AuthModule } from "./auth/auth.module";
 import { LoggerMiddleware } from "./common/middleware/logger.middleware";
+import { PalacesModule } from "./palaces/palaces.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { RecordsModule } from "./records/records.module";
 
 @Module({
-  imports: [PrismaModule, AuthModule, RecordsModule],
+  imports: [PrismaModule, AuthModule, RecordsModule, PalacesModule],
   controllers: [AppController],
 })
 export class AppModule implements NestModule {

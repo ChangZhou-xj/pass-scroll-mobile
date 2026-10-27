@@ -32,6 +32,8 @@
 
         <view class="mt-32rpx h-2rpx bg-[#A9DCC3]" />
 
+        <text class="mt-24rpx block text-22rpx text-[#0D0D0D]">今日待复习 {{ stats.dueCount }} 张</text>
+
         <view class="mt-32rpx flex h-200rpx items-end justify-between">
           <view v-for="(day, index) in trendDays" :key="index" class="flex flex-1 flex-col items-center">
             <text class="mb-8rpx text-20rpx text-[#0D0D0D]">{{ day.count || "" }}</text>
@@ -71,8 +73,26 @@
         <text class="mt-8rpx font-mono text-22rpx text-[#67676C]">v0.1.0</text>
       </view>
 
-      <!-- 我的简历 + 修改密码 + 退出登录：一张白卡三行（退出为红字行） -->
+      <!-- 记忆宫殿 + 记忆曲线 + 我的简历 + 修改密码 + 退出登录：一张白卡五行（退出为红字行） -->
       <view class="mx-30rpx mt-40rpx rounded-48rpx border-2rpx border-solid border-[#E3E3E6] bg-white px-30rpx">
+        <view
+          class="h-100rpx flex items-center justify-between border-0 border-b-2rpx border-solid border-[#EFEFF1]"
+          @click="goPalace">
+          <text class="text-28rpx text-[#0D0D0D]">🏛 记忆宫殿</text>
+          <view class="flex items-center">
+            <text class="font-mono text-20rpx tracking-[2rpx] text-[#67676C]">位置法</text>
+            <text class="ml-8rpx text-28rpx text-[#67676C]">›</text>
+          </view>
+        </view>
+        <view
+          class="h-100rpx flex items-center justify-between border-0 border-b-2rpx border-solid border-[#EFEFF1]"
+          @click="goCurve">
+          <text class="text-28rpx text-[#0D0D0D]">📈 记忆曲线</text>
+          <view class="flex items-center">
+            <text class="font-mono text-20rpx tracking-[2rpx] text-[#67676C]">{{ curveName }}</text>
+            <text class="ml-8rpx text-28rpx text-[#67676C]">›</text>
+          </view>
+        </view>
         <view
           class="h-100rpx flex items-center justify-between border-0 border-b-2rpx border-solid border-[#EFEFF1]"
           @click="goResume">
@@ -112,6 +132,7 @@ import type { RecordItem, RecordStats } from "@/types/record";
 import { onShow } from "@dcloudio/uni-app";
 import { getStats } from "@/api/record";
 import { useRecordStore } from "@/store/record";
+import { useSrsStore } from "@/store/srs";
 import { useUserStore } from "@/store/modules/user";
 import { T } from "@/theme/tokens";
 
@@ -131,6 +152,11 @@ type RecordStoreProxy = Omit<ReturnType<typeof useRecordStore>, "records" | "tot
 
 const userStore = useUserStore() as unknown as UserStoreProxy;
 const recordStore = useRecordStore() as unknown as RecordStoreProxy;
+const srsStore = useSrsStore() as unknown as { presetKey: string };
+
+/** 当前使用的记忆曲线名（自定义时不叫"自定义"，直接显示用户实际改过的配置更直观） */
+const CURVE_NAMES: Record<string, string> = { classic: "经典", relaxed: "舒缓", intensive: "密集", custom: "自定义" };
+const curveName = computed(() => CURVE_NAMES[srsStore.presetKey] ?? "自定义");
 
 const isLoggedIn = computed(() => Boolean(userStore.token));
 const userInfo = computed(() => userStore.userInfo);
@@ -143,6 +169,7 @@ const stats = reactive<RecordStats>({
   pinnedCount: 0,
   trend7d: [0, 0, 0, 0, 0, 0, 0],
   mastery: { none: 0, learning: 0, mastered: 0 },
+  dueCount: 0,
 });
 
 const trendDays = computed(() => {
@@ -198,6 +225,14 @@ const goLogin = () => {
 
 const goPassword = () => {
   uni.navigateTo({ url: "/pages/password/index" });
+};
+
+const goPalace = () => {
+  uni.navigateTo({ url: "/pages/palace/index" });
+};
+
+const goCurve = () => {
+  uni.navigateTo({ url: "/pages/curve/index" });
 };
 
 // 简历预览页自行处理登录守卫与 PDF 打开

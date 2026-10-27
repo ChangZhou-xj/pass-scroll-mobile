@@ -28,6 +28,7 @@ model User {
   createdAt DateTime @default(now())
   records   Record[] // 一对多：一个用户拥有多条笔记（虚拟字段，不占用数据库列）
   tags      Tag[]    // 一对多：标签按用户隔离，A 的"面试"和 B 的"面试"是两行
+  palaces   Palace[] // 一对多：记忆宫殿（空间分组，见下方 Palace）
 }
 
 // 笔记表：本项目的核心数据。标题 + markdown 正文
@@ -46,8 +47,40 @@ model Record {
   snapshots RecordSnapshot[] // 一对多：每次内容变更前的"修改前快照"
   tags      RecordTag[] // 多对多桥接：一条笔记可挂多个标签
 
+  // ── 记忆卡片：间隔重复调度状态（算法见 records/srs.ts）────────────────
+  // 一条笔记 = 一张记忆卡片。这几个字段是"这张卡在遗忘曲线上的当前坐标"。
+  stage          Int       @default(0) // 记忆阶段：连续答对就 +1，答错（AGAIN）归零
+  ease           Float     @default(2.5) // 难度系数：越大间隔膨胀越快（SM-2 经典初值 2.5）
+  lapses         Int       @default(0) // 遗忘次数：累计 AGAIN 次数，用来看这张卡有多"难啃"
+  reviewCount    Int       @default(0) // 累计复习次数（区分"新卡/旧卡"）
+  dueAt          DateTime? // 下次复习时刻；null = 从未排期（新卡）
+  lastReviewedAt DateTime? // 上次复习时刻；null = 从未复习过
+  firstReviewedAt DateTime? // 首次复习时刻；"今日已引入几张新卡"按它算（每日新卡上限要用，见 records.service.ts due()）
+
+  // ── 记忆宫殿：把卡片放到"空间位置"上（位置法 / locus 记忆术）────────────
+  palaceId    String? // 所属宫殿；null = 未归档（删除宫殿时置 null，笔记不跟着删）
+  palace      Palace?  @relation(fields: [palaceId], references: [id], onDelete: SetNull)
+  palaceOrder Int      @default(0) // 宫殿内的"第几个位置"：巡游时按它走位，形成固定空间路径
+
   @@index([userId, updatedAt]) // 列表页查询（某用户、按更新时间倒序）走这个索引
+  @@index([userId, dueAt]) // 复习队列：查"某用户已到期的卡片"走这个索引
+  @@index([palaceId, palaceOrder]) // 宫殿巡游：按位置顺序取某宫殿下的卡片
   @@unique([userId, sourceUrl]) // 抓取幂等主键：同一用户同一来源只许一行（MySQL 唯一索引允许多个 NULL，手写笔记不受影响）
+}
+
+// 记忆宫殿：一组"熟悉的空间位置"，用来给笔记卡片分配固定桩位
+// 复习时沿 palaceOrder 走位（门口→客厅→书桌→…），用空间顺序承载记忆顺序——即记忆宫殿法
+model Palace {
+  id          String   @id @default(cuid())
+  name        String   @db.VarChar(60)
+  emoji       String   @default("🏛") @db.VarChar(8) // 宫殿图标（emoji 用 utf8mb4，注意字段长度按字符算）
+  description String?  @db.VarChar(200) // 一句话说明这条空间路径是什么（如"从家门口到书房"）
+  createdAt   DateTime @default(now())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  records     Record[]
+
+  @@index([userId, createdAt])
 }
 
 // 标签表：标签属于用户（@@unique([userId, name]) 保证同一用户内不重名）

@@ -25,6 +25,17 @@ export function serializeRecord(record: RecordWithTags) {
     tags: record.tags.map((rt) => rt.tag.name),
     createdAt: record.createdAt.getTime(),
     updatedAt: record.updatedAt.getTime(),
+    // 记忆卡片调度状态（见 records/srs.ts）：null 表示"从未排期/从未复习"
+    stage: record.stage,
+    ease: record.ease,
+    lapses: record.lapses,
+    reviewCount: record.reviewCount,
+    dueAt: record.dueAt ? record.dueAt.getTime() : null,
+    lastReviewedAt: record.lastReviewedAt ? record.lastReviewedAt.getTime() : null,
+    firstReviewedAt: record.firstReviewedAt ? record.firstReviewedAt.getTime() : null,
+    // 记忆宫殿位置（null = 未归档到任何宫殿）
+    palaceId: record.palaceId,
+    palaceOrder: record.palaceOrder,
   };
 }
 

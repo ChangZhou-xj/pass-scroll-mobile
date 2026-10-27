@@ -44,11 +44,21 @@ export const useRecordStore = defineStore("record", () => {
       const cached = uni.getStorageSync(CACHE_KEY);
       if (cached) {
         // 归一化旧版缓存：补齐新增字段，避免徽章误报与首次保存跳过乐观锁
+        // （记忆卡片字段同理：旧缓存没有 stage/dueAt，不补会让复习页读到 undefined）
         const parsed = JSON.parse(cached) as Partial<RecordItem>[];
         records.value = parsed.map((item) => ({
           ...item,
           mastery: item.mastery ?? "NONE",
           version: item.version ?? 1,
+          stage: item.stage ?? 0,
+          ease: item.ease ?? 2.5,
+          lapses: item.lapses ?? 0,
+          reviewCount: item.reviewCount ?? 0,
+          dueAt: item.dueAt ?? null,
+          lastReviewedAt: item.lastReviewedAt ?? null,
+          firstReviewedAt: item.firstReviewedAt ?? null,
+          palaceId: item.palaceId ?? null,
+          palaceOrder: item.palaceOrder ?? 0,
         })) as RecordItem[];
       }
     } catch (e) {

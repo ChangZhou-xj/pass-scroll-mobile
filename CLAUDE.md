@@ -80,9 +80,31 @@ npm run crawl:github -- --user <用户名> [--dir "子目录"] # 抓 GitHub 目�
 
 **契约成对文件**：[record.serializer.ts](server/src/records/record.serializer.ts) 的输出与 [src/types/record.d.ts](src/types/record.d.ts) 一一对应（tags 拍平成 `string[]`、时间转毫秒）。后端动返回结构，必须同步改前端类型，再跑 `pnpm type-check`。
 
+## 记忆系统：间隔重复 + 记忆宫殿
+
+> 注：spec `2026-09-24-articlepilot-features-design.md` 曾把「掌握度复习算法（间隔重复）」列为不做，本功能已落地，以本节为准。
+
+**一条笔记 = 一张记忆卡片**。`Record` 上新增调度字段：`stage/ease/lapses/reviewCount/dueAt/lastReviewedAt/firstReviewedAt`，
+以及空间位置 `palaceId/palaceOrder`（`Palace` 表 = 一条熟悉的空间路径，卡片按 `palaceOrder` 当桩位摆上去——位置法/记忆宫殿）。
+
+算法（艾宾浩斯梯度 + SM-2 难度因子）在 [server/src/records/srs.ts](server/src/records/srs.ts)，纯函数、`now` 由调用方传入便于钉死时间单测。
+**⚠️ 前端 [src/utils/srs.ts](src/utils/srs.ts) 是它的同构副本**（复习页四个按钮要预显示「N 天后再见」、曲线页要预览轨迹，不能为此发请求）。**改一边必须改另一边**，否则按钮上的天数会与真正写入的 `dueAt` 不一致。
+
+- 四档自评：`AGAIN` 打回 stage 0 且 `lapses+1`、`HARD` 停原阶段但间隔打折、`GOOD` stage+1、`EASY` stage+1 且间隔×`easyBonus`。
+- 掌握度由评分推导（`stage >= curve.masteredStage` → `MASTERED`），但仍过 `mastery-state.ts` 状态机；**同值不调用** `assertMasteryTransition`（它对 `from===to` 也抛 10002）。
+- 复习**不改列表排序**：`review()` 与 `setMastery()`/`togglePin()` 一样显式回写旧 `updatedAt`。
+- **记忆曲线配置不落库**：它是这台设备上的个人偏好，存 storage `pass_scroll_curve`，每次 `POST /records/:id/review` 随 `grade` 带给后端（`normalizeCurve` 兜底清洗）；每日新卡上限另由 `GET /records/due?newPerDay=` 带入。换设备曲线不跟随，但 `dueAt/stage` 在服务端，复习进度不丢。
+- 队列口径（`GET /records/due`）：到期卡（`dueAt <= now`，按 `dueAt` 升序 = 逾期最久在前）+ 定额新卡（`reviewCount = 0`），可传 `palaceId` 做宫殿巡游、传 `tag` 做主题聚焦。`stats` 里的 `dueCount` 用同一口径。
+- **队列要按标签分块，不能混排**：排完序还要过 [records.service.ts](server/src/records/records.service.ts) 的 `orderByTagBlock`——同一标签的卡片连成一整块，块内到期优先，块间按"最逾期"排。混排会让 #游戏 和 #面试 交替出现，大脑反复换主题，学完拼不出整块知识（单测见 `due-block.spec.ts`）。返回里的 `blocks` 给前端显示"本组还剩几张"。
+- 卡片的"主标签"= `tags[0]`（Prisma 不带 orderBy 时按桥接表主键返回，顺序稳定，前后端算出来必然一致）；没标签的归"未分类"块。
+- `GET /records/due/tags` 给出「每个标签今日待复习数 + 笔记总数」，标签栏角标与复习页主题切换器都用它；首页标签栏的**展示顺序**也直接用它（有待复习的在前）。
+- 路由顺序陷阱：`@Get("due")`、`@Get("due/tags")` 必须注册在 `@Get(":id")` **之前**（同 `"stats"`）。
+
+前端入口：复习页（四档自评 + 进度）、[curve/index.vue](src/pages/curve/index.vue)（曲线可视化 + 自定义）、[palace/index.vue](src/pages/palace/index.vue)（宫殿与桩位编排）。队列状态在 [src/store/srs.ts](src/store/srs.ts)，与 `record` store 分工：前者管「卡片调度」，后者管「笔记本体」。
+
 ## 前端状态与页面结构
 
-- **列表单一数据源**是 [src/store/record.ts](src/store/record.ts)：`records/total/keyword/activeTag` 由首页、复习页、详情页共享；所有增删改/置顶/掌握度动作成功后都 `fetchList()` 重新对齐。
+- **列表单一数据源**是 [src/store/record.ts](src/store/record.ts)：`records/total/keyword/activeTag` 由首页、详情页、宫殿页共享；所有增删改/置顶/掌握度动作成功后都 `fetchList()` 重新对齐。（复习页改由 `srs` store 的到期队列驱动，不再从这张列表里随机抽题）
 - **缓存策略**：`App.vue` 的 `onLaunch` 先 `init()` 读 storage（冷启动秒开、离线只读），各页面 `onShow` 再 `fetchList()` 覆盖。缓存 key `pass_scroll_records` 按用户隔离，`logout()` 会连同 store 与 storage 一起清，避免下一账号看到上一账号数据。`init()` 里对旧缓存做字段归一化（补 `mastery`/`version`），新增字段时照此兼容。
 - **登录守卫没有全局路由中间件**：每个受保护页面在自己的 `onShow` 里 `if (!userStore.token) uni.reLaunch({ url: "/pages/login/index" })`。新页面需要登录态时照此手写。
 - `request.ts → store/modules/user.ts → api/auth.ts → request.ts` 存在循环依赖，401 处理里用**动态 import** 打破。

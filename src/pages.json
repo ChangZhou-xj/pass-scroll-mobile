@@ -64,6 +64,18 @@
     {
       "path": "pages/editor/index",
       "style": {}
+    },
+    {
+      "path": "pages/curve/index",
+      "style": {
+        "backgroundColor": "#FFFFFF"
+      }
+    },
+    {
+      "path": "pages/palace/index",
+      "style": {
+        "backgroundColor": "#FFFFFF"
+      }
     }
   ],
   "globalStyle": {

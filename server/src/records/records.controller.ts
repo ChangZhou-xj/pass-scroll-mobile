@@ -9,6 +9,8 @@
  *
  * REST 风格速览：
  *   GET    /records            列表（keyword/tag/分页，参数在 query）
+ *   GET    /records/due        今日复习队列（按标签分块，同主题连续复习）；可传 tag 只学一个主题
+ *   GET    /records/due/tags   今日待复习按标签统计（标签栏角标 / 主题切换器）
  *   GET    /records/stats      统计（"我的"页）——必须注册在 @Get(":id") 之前，
  *                              否则 "stats" 会被 :id 当成一个记录 id 匹配走（同段数路由按声明顺序匹配）
  *   GET    /records/:id        单条详情
@@ -23,7 +25,14 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
-import { CreateRecordDto, QueryRecordDto, UpdateMasteryDto, UpdateRecordDto } from "./dto/record.dto";
+import {
+  CreateRecordDto,
+  DueQueryDto,
+  QueryRecordDto,
+  ReviewRecordDto,
+  UpdateMasteryDto,
+  UpdateRecordDto,
+} from "./dto/record.dto";
 import { RecordsService } from "./records.service";
 
 @UseGuards(JwtAuthGuard)
@@ -39,6 +48,18 @@ export class RecordsController {
   @Get("stats")
   stats(@CurrentUser() user: AuthUser) {
     return this.records.stats(user.userId);
+  }
+
+  // 复习队列：必须注册在 @Get(":id") 之前（同 stats 的路由顺序陷阱）
+  @Get("due")
+  due(@CurrentUser() user: AuthUser, @Query() query: DueQueryDto) {
+    return this.records.due(user.userId, query);
+  }
+
+  // 今日待复习按标签统计（标签栏角标 / 复习页主题切换器）；同理要注册在 @Get(":id") 之前
+  @Get("due/tags")
+  dueTags(@CurrentUser() user: AuthUser) {
+    return this.records.dueTags(user.userId);
   }
 
   @Get(":id")
@@ -84,5 +105,11 @@ export class RecordsController {
   @Post(":id/mastery")
   setMastery(@CurrentUser() user: AuthUser, @Param("id") id: string, @Body() dto: UpdateMasteryDto) {
     return this.records.setMastery(user.userId, id, dto.to);
+  }
+
+  // 提交一次复习自评（AGAIN/HARD/GOOD/EASY）→ 推进间隔重复调度
+  @Post(":id/review")
+  review(@CurrentUser() user: AuthUser, @Param("id") id: string, @Body() dto: ReviewRecordDto) {
+    return this.records.review(user.userId, id, dto);
   }
 }
