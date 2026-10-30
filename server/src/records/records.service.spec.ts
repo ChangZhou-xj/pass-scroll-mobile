@@ -73,6 +73,46 @@ describe("RecordsService", () => {
     expect(list[0].title).toBe("A");
   });
 
+  it("list 按 tag 过滤时按 sourceOrder 升序排（小册章节顺序），无序号的手写笔记排最后", async () => {
+    // 故意按乱序创建，模拟爬虫导入时间与章节顺序无关
+    const c3 = await service.create(userId, { title: "第三章", content: "", tags: ["小册"] });
+    const c1 = await service.create(userId, { title: "第一章", content: "", tags: ["小册"] });
+    const c2 = await service.create(userId, { title: "第二章", content: "", tags: ["小册"] });
+    await service.create(userId, { title: "手写笔记", content: "", tags: ["小册"] });
+    await prisma.record.update({ where: { id: c3.id }, data: { sourceOrder: 2 } });
+    await prisma.record.update({ where: { id: c1.id }, data: { sourceOrder: 0 } });
+    await prisma.record.update({ where: { id: c2.id }, data: { sourceOrder: 1 } });
+
+    const { list } = await service.list(userId, { tag: "小册", page: 1, pageSize: 20 });
+
+    expect(list.map((r) => r.title)).toEqual(["第一章", "第二章", "第三章", "手写笔记"]);
+    expect(list[0].sourceOrder).toBe(0);
+  });
+
+  it("tag 过滤下置顶仍优先于章节顺序", async () => {
+    const c1 = await service.create(userId, { title: "第一章", content: "", tags: ["小册"] });
+    const c2 = await service.create(userId, { title: "第二章", content: "", tags: ["小册"] });
+    await prisma.record.update({ where: { id: c1.id }, data: { sourceOrder: 0 } });
+    await prisma.record.update({ where: { id: c2.id }, data: { sourceOrder: 1 } });
+    await service.togglePin(userId, c2.id);
+
+    const { list } = await service.list(userId, { tag: "小册", page: 1, pageSize: 20 });
+
+    expect(list.map((r) => r.title)).toEqual(["第二章", "第一章"]);
+  });
+
+  it("不带 tag 时排序不变量不变：sourceOrder 不影响混合列表", async () => {
+    const c1 = await service.create(userId, { title: "第一章", content: "", tags: ["小册"] });
+    const c2 = await service.create(userId, { title: "第二章", content: "", tags: ["小册"] });
+    await prisma.record.update({ where: { id: c1.id }, data: { sourceOrder: 0 } });
+    await prisma.record.update({ where: { id: c2.id }, data: { sourceOrder: 1 } });
+
+    const { list } = await service.list(userId, { page: 1, pageSize: 20 });
+
+    // 混合列表仍按 updatedAt 倒序：后创建的"第二章"在前
+    expect(list.map((r) => r.title)).toEqual(["第二章", "第一章"]);
+  });
+
   it("list 分页：pageSize 限制条数，total 为全量", async () => {
     for (let i = 0; i < 5; i++) await service.create(userId, { title: `T${i}`, content: "", tags: [] });
     const { list, total } = await service.list(userId, { page: 2, pageSize: 2 });

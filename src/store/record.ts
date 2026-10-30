@@ -50,6 +50,7 @@ export const useRecordStore = defineStore("record", () => {
           ...item,
           mastery: item.mastery ?? "NONE",
           version: item.version ?? 1,
+          sourceOrder: item.sourceOrder ?? null,
           stage: item.stage ?? 0,
           ease: item.ease ?? 2.5,
           lapses: item.lapses ?? 0,

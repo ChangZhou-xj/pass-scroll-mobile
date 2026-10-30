@@ -44,6 +44,7 @@ model Record {
   version   Int         @default(1) // 内容版本号：每次改标题/正文 +1，乐观锁与快照都靠它
   mastery   Mastery     @default(NONE) // 掌握度（见下方 enum 与 records/mastery-state.ts 状态机）
   sourceUrl String?     @db.VarChar(512) // 远程来源 URL（GitHub 文档抓取用）；手写笔记为 null
+  sourceOrder Int? // 来源目录内的章节序号（爬虫按文件名自然序写入）；手写笔记为 null。按标签筛选时靠它恢复小册的阅读顺序
   snapshots RecordSnapshot[] // 一对多：每次内容变更前的"修改前快照"
   tags      RecordTag[] // 多对多桥接：一条笔记可挂多个标签
 

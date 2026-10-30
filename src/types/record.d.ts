@@ -45,6 +45,8 @@ export interface RecordItem {
   /** 内容版本号，乐观锁用 */
   version: number;
   mastery: Mastery;
+  /** 来源目录内的章节序号（爬虫写入；手写笔记为 null）。按标签筛选时列表按它升序 */
+  sourceOrder: number | null;
   tags: string[];
   /** 毫秒时间戳 */
   createdAt: number;

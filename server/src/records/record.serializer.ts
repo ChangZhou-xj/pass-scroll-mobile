@@ -22,6 +22,8 @@ export function serializeRecord(record: RecordWithTags) {
     isPinned: record.isPinned,
     version: record.version,
     mastery: record.mastery,
+    // 来源目录内的章节序号（爬虫写入；手写笔记为 null），按标签筛选时列表按它排序
+    sourceOrder: record.sourceOrder,
     tags: record.tags.map((rt) => rt.tag.name),
     createdAt: record.createdAt.getTime(),
     updatedAt: record.updatedAt.getTime(),

@@ -42,7 +42,7 @@ npx jest -t "乐观锁"                     # 按用例名匹配
 npm run test:e2e                        # supertest 端到端（test/*.e2e-spec.ts）
 npm run prisma:migrate -- --name <名>    # 改 schema.prisma 后生成并应用迁移
 npm run import:md -- --dir <docs目录> --user <用户名>   # markdown 批量导入
-npm run crawl:github -- --user <用户名> [--dir "子目录"] # 抓 GitHub 目录 md 入库（按 userId+sourceUrl 幂等，见 docs/superpowers/specs/2026-10-27-github-doc-crawler-design.md）
+npm run crawl:github -- --user <用户名> [--dir "子目录"] # 抓 GitHub 目录 md 入库（按 userId+sourceUrl 幂等，见 npm run crawl:github -- --user e2euser --repo lm-rebooter/NuggetsBooklet --dir "MySQL 是怎样运行的：从根儿上理解 MySQL" --branch master ）
 ```
 
 `jest` 与 `test:e2e` 都强制 `maxWorkers: 1`（共享同一个测试库），且 `globalSetup` 会用 `prisma db push --accept-data-loss` **重建 `pass_scroll_test` 库**——跑测试前确认 DATABASE_URL 指向测试库而非开发库。
@@ -127,3 +127,7 @@ npm run crawl:github -- --user <用户名> [--dir "子目录"] # 抓 GitHub 目�
 - ESLint 强制双引号、分号、2 空格；`@typescript-eslint/no-explicit-any` 已关闭。
 - Prettier 实际生效的是 [.prettierrc](.prettierrc)（`printWidth: 120`）；仓库根的 `prettier.config.mjs` 优先级更低、**不生效**，别在它上面调格式。
 - `src/types/auto-imports.d.ts` 与 `.eslintrc-auto-import.json` 是 unplugin-auto-import 的生成物，不要手改；`dev`/`build` 后会出现在 git 改动里属正常。
+
+## gstack
+
+所有网页浏览都使用 gstack 的 `/browse` 技能；切勿使用 `mcp__claude-in-chrome__*` 工具。

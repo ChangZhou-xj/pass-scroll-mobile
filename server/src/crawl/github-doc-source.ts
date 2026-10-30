@@ -84,6 +84,8 @@ export interface DocPayload {
   title: string;
   content: string;
   tags: string[];
+  /** 来源目录内按文件名自然序的章节序号（0 起），前端按标签筛选时靠它恢复小册阅读顺序 */
+  sourceOrder: number;
 }
 
 export type DocOutcome = "created" | "updated" | "skipped";
@@ -266,7 +268,7 @@ export async function fetchMarkdown(item: GithubContentItem, options: CrawlOptio
 export async function saveDoc(prisma: PrismaClient, userId: string, payload: DocPayload): Promise<DocOutcome> {
   const existing = await prisma.record.findFirst({
     where: { userId, sourceUrl: payload.sourceUrl },
-    select: { id: true, title: true, content: true, version: true },
+    select: { id: true, title: true, content: true, version: true, sourceOrder: true, updatedAt: true },
   });
 
   // 标签只能这样挂：Tag 上有 @@unique([userId, name])，connectOrCreate 才能按用户隔离复用同名标签
@@ -281,6 +283,7 @@ export async function saveDoc(prisma: PrismaClient, userId: string, payload: Doc
         title: payload.title,
         content: payload.content,
         sourceUrl: payload.sourceUrl,
+        sourceOrder: payload.sourceOrder,
         tags: { create: tagLinks },
       },
     });
@@ -288,6 +291,14 @@ export async function saveDoc(prisma: PrismaClient, userId: string, payload: Doc
   }
 
   if (existing.title === payload.title && existing.content === payload.content) {
+    // 章节序号缺失/漂移（如 sourceOrder 上线前导入的老数据）时单独补齐。
+    // 这不是内容变更：不写快照、不加 version，并回写旧 updatedAt 防止笔记被顶到列表最前。
+    if (existing.sourceOrder !== payload.sourceOrder) {
+      await prisma.record.update({
+        where: { id: existing.id },
+        data: { sourceOrder: payload.sourceOrder, updatedAt: existing.updatedAt },
+      });
+    }
     return "skipped";
   }
 
@@ -307,6 +318,8 @@ export async function saveDoc(prisma: PrismaClient, userId: string, payload: Doc
         title: payload.title,
         content: payload.content,
         version: { increment: 1 },
+        // 上游可能调整过章节顺序，内容更新时一并对齐
+        sourceOrder: payload.sourceOrder,
         // 先解绑再按当前来源重建，保证标签与远端一致（可能残留无引用的 Tag 行，可接受）
         tags: { deleteMany: {}, create: tagLinks },
       },
@@ -328,7 +341,7 @@ export async function syncDocs(prisma: PrismaClient, userId: string, options: Cr
   if (!items.length) log?.(`目录 ${docPath} 下没有 .md 文件`);
 
   const tags = deriveTags(docPath, options.extraTags);
-  for (const item of items) {
+  for (const [index, item] of items.entries()) {
     try {
       const content = await fetchMarkdown(item, options);
       const outcome = await saveDoc(prisma, userId, {
@@ -336,6 +349,8 @@ export async function syncDocs(prisma: PrismaClient, userId: string, options: Cr
         title: resolveTitle(content, item.name),
         content,
         tags,
+        // items 已按文件名自然序排好，下标即章节序号
+        sourceOrder: index,
       });
       result[outcome] += 1;
       log?.(`${outcome === "created" ? "新增" : outcome === "updated" ? "更新" : "跳过"}：${item.name}`);

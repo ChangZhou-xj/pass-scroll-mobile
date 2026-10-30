@@ -346,10 +346,16 @@ describe("fetchDocViaApi", () => {
 // ---------------------------------------------------------------- 落库幂等
 
 describe("saveDoc", () => {
-  const payload = { sourceUrl: "https://raw/1.md", title: "标题", content: "正文", tags: ["TypeScript"] };
+  const payload = {
+    sourceUrl: "https://raw/1.md",
+    title: "标题",
+    content: "正文",
+    tags: ["TypeScript"],
+    sourceOrder: 3,
+  };
   const userId = "user-1";
 
-  it("首次入库 → created，标签走 connectOrCreate", async () => {
+  it("首次入库 → created，标签走 connectOrCreate，并写入章节序号", async () => {
     const { prisma, findFirst, create } = fakePrisma();
     findFirst.mockResolvedValue(null);
 
@@ -358,7 +364,7 @@ describe("saveDoc", () => {
     expect(outcome).toBe("created");
     expect(findFirst).toHaveBeenCalledWith({
       where: { userId, sourceUrl: payload.sourceUrl },
-      select: { id: true, title: true, content: true, version: true },
+      select: { id: true, title: true, content: true, version: true, sourceOrder: true, updatedAt: true },
     });
     expect(create).toHaveBeenCalledWith({
       data: expect.objectContaining({
@@ -366,6 +372,7 @@ describe("saveDoc", () => {
         title: "标题",
         content: "正文",
         sourceUrl: payload.sourceUrl,
+        sourceOrder: 3,
         tags: {
           create: [
             {
@@ -382,9 +389,16 @@ describe("saveDoc", () => {
     });
   });
 
-  it("标题与正文都没变 → skipped，且不产生任何写操作", async () => {
+  it("标题与正文都没变且序号一致 → skipped，且不产生任何写操作", async () => {
     const { prisma, findFirst, create, update, transaction } = fakePrisma();
-    findFirst.mockResolvedValue({ id: "r1", title: "标题", content: "正文", version: 1 });
+    findFirst.mockResolvedValue({
+      id: "r1",
+      title: "标题",
+      content: "正文",
+      version: 1,
+      sourceOrder: 3,
+      updatedAt: new Date("2026-01-01"),
+    });
 
     const outcome = await saveDoc(prisma, userId, payload);
 
@@ -394,9 +408,34 @@ describe("saveDoc", () => {
     expect(transaction).not.toHaveBeenCalled();
   });
 
-  it("正文变了 → updated：快照 + version+1 同事务", async () => {
+  it("内容一致但章节序号缺失/不同 → 只补 sourceOrder：不写快照、不加 version、回写旧 updatedAt", async () => {
+    const { prisma, findFirst, update, transaction } = fakePrisma();
+    // 老数据是 sourceOrder 字段上线前导入的，值为 null
+    const updatedAt = new Date("2026-01-01T00:00:00Z");
+    findFirst.mockResolvedValue({ id: "r1", title: "标题", content: "正文", version: 5, sourceOrder: null, updatedAt });
+
+    const outcome = await saveDoc(prisma, userId, payload);
+
+    // 序号补齐不算内容变更，outcome 仍是 skipped
+    expect(outcome).toBe("skipped");
+    expect(transaction).not.toHaveBeenCalled();
+    expect(update).toHaveBeenCalledWith({
+      where: { id: "r1" },
+      // 显式回写旧 updatedAt：补序号不该把这条笔记顶到列表最前（排序不变量）
+      data: { sourceOrder: 3, updatedAt },
+    });
+  });
+
+  it("正文变了 → updated：快照 + version+1 同事务，同时刷新章节序号", async () => {
     const { prisma, findFirst, update, snapshotCreate, transaction } = fakePrisma();
-    findFirst.mockResolvedValue({ id: "r1", title: "标题", content: "旧正文", version: 7 });
+    findFirst.mockResolvedValue({
+      id: "r1",
+      title: "标题",
+      content: "旧正文",
+      version: 7,
+      sourceOrder: 1,
+      updatedAt: new Date("2026-01-01"),
+    });
 
     const outcome = await saveDoc(prisma, userId, payload);
 
@@ -408,13 +447,21 @@ describe("saveDoc", () => {
     });
     expect(update).toHaveBeenCalledWith({
       where: { id: "r1" },
-      data: expect.objectContaining({ title: "标题", content: "正文", version: { increment: 1 } }),
+      // 上游目录可能调整过章节顺序，内容更新时一并对齐
+      data: expect.objectContaining({ title: "标题", content: "正文", version: { increment: 1 }, sourceOrder: 3 }),
     });
   });
 
   it("只有标题变了也触发 updated（标题参与幂等判定）", async () => {
     const { prisma, findFirst, update } = fakePrisma();
-    findFirst.mockResolvedValue({ id: "r1", title: "旧标题", content: "正文", version: 1 });
+    findFirst.mockResolvedValue({
+      id: "r1",
+      title: "旧标题",
+      content: "正文",
+      version: 1,
+      sourceOrder: 3,
+      updatedAt: new Date("2026-01-01"),
+    });
 
     expect(await saveDoc(prisma, userId, payload)).toBe("updated");
     expect(update).toHaveBeenCalled();
@@ -457,6 +504,30 @@ describe("syncDocs", () => {
     expect(result.created).toBe(1);
     expect(result.failed).toBe(1);
     expect(result.failures[0]).toEqual({ path: "docs/2.b.md", reason: expect.stringContaining("HTTP 404") });
+  });
+
+  it("按文件名自然序入库：目录返回乱序时，章节序号仍按 0,1,2… 依次写入", async () => {
+    const { prisma, findFirst, create } = fakePrisma();
+    findFirst.mockResolvedValue(null);
+    const fetchImpl = fakeFetch({
+      // GitHub Contents API 不保证顺序，这里故意乱序返回
+      [listUrl]: okJson([
+        fileItem("10.c.md", "docs/10.c.md"),
+        fileItem("2.b.md", "docs/2.b.md"),
+        fileItem("1.a.md", "docs/1.a.md"),
+      ]),
+      [buildRawUrl("o/r", "master", "docs/1.a.md")]: okText("# 第一篇"),
+      [buildRawUrl("o/r", "master", "docs/2.b.md")]: okText("# 第二篇"),
+      [buildRawUrl("o/r", "master", "docs/10.c.md")]: okText("# 第三篇"),
+    });
+
+    await syncDocs(prisma, userId, { ...baseOptions, repo: "o/r", docPath: "docs", fetchImpl });
+
+    expect(create.mock.calls.map((call) => [call[0].data.title, call[0].data.sourceOrder])).toEqual([
+      ["第一篇", 0],
+      ["第二篇", 1],
+      ["第三篇", 2],
+    ]);
   });
 
   it("目录下没有 md 文件 → 全部计数为 0 且不报错", async () => {

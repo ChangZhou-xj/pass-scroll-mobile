@@ -100,7 +100,11 @@ export class RecordsService {
         where,
         // include 就是 JOIN 并把结果嵌套进返回值：把每条笔记绑定的标签名一并查出来
         include: { tags: { include: { tag: true } } },
-        orderBy: [{ isPinned: "desc" }, { updatedAt: "desc" }],
+        // 按标签筛选（多半是某本小册）时按章节序号升序恢复阅读顺序，无序号的排最后；
+        // 混合列表维持 isPinned desc, updatedAt desc 不变量
+        orderBy: query.tag
+          ? [{ isPinned: "desc" }, { sourceOrder: { sort: "asc", nulls: "last" } }, { updatedAt: "desc" }]
+          : [{ isPinned: "desc" }, { updatedAt: "desc" }],
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
       }),
