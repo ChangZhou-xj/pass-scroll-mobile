@@ -10,7 +10,7 @@ node_modules
 .DS_Store
 dist
 *.local
-
+.cluade
 # Editor directories and files
 .idea
 .history/*
@@ -19,5 +19,9 @@ dist
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
+*.sw
 /server/.env
+.claude-flow
+.gstack/
+.impeccable/config.json
+.claude/*

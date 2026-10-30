@@ -12,6 +12,15 @@ export default defineConfig(async ({ mode }: ConfigEnv): Promise<UserConfig> => 
   const env = loadEnv(mode, process.cwd());
 
   return {
+    css: {
+      preprocessorOptions: {
+        scss: {
+          // wot-design-uni 内部仍在用 legacy 全局函数，屏蔽依赖库的 deprecation 警告
+          quietDeps: true,
+          silenceDeprecations: ["legacy-js-api", "import", "global-builtin"],
+        },
+      },
+    },
     server: {
       host: "0.0.0.0",
       port: +env.VITE_APP_PORT,
