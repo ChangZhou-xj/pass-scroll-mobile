@@ -5,8 +5,10 @@
  * 本 store 管"笔记作为记忆卡片的调度"——今天该复习谁、复习完排到什么时候、卡片摆在哪个空间位置。
  *
  * 【记忆曲线配置存在本地】曲线是用户的个人偏好（属于这台设备上的这个人），不是笔记数据：
- * 不下发到后端，每次提交评分时随 grade 一起带上（后端不持久化，见 records.service.review）。
+ * 不下发到后端持久化，每次提交评分时随 grade 一起带上，完成首次学习时也随 learn 请求带上
+ * （后端不持久化，见 records.service.review / records.service.learn）。
  * 所以换设备时曲线不跟随，但卡片调度状态（dueAt/stage/ease）在服务端，换设备复习进度不丢。
+ * 注意：队列只含已学习且到期的卡，newPerDay 不再用于拉取队列，它只限制每日首次学习次数。
  */
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
@@ -132,7 +134,6 @@ export const useSrsStore = defineStore("srs", () => {
         limit,
         palaceId: palaceId || undefined,
         tag: tag || undefined,
-        newPerDay: curve.value.newPerDay,
       });
       queue.value = res.list;
       blocks.value = res.blocks ?? [];
@@ -162,8 +163,12 @@ export const useSrsStore = defineStore("srs", () => {
       queue.value = queue.value.filter((item) => item.id !== id);
       if (queue.value.length !== before) {
         learnedToday.value += 1;
-        if (dueCount.value > 0) dueCount.value -= 1;
-        else if (freshCount.value > 0) freshCount.value -= 1;
+        // 按这张卡的真实类型递减：首次复习卡（reviewCount = 0）减 freshCount，其余减 dueCount
+        if (card?.reviewCount === 0) {
+          if (freshCount.value > 0) freshCount.value -= 1;
+        } else if (dueCount.value > 0) {
+          dueCount.value -= 1;
+        }
         // 标签角标同步减：答完一张，它所属主题的待复习数就该少一张
         card?.tags.forEach((name) => {
           const hit = dueTags.value.find((item) => item.name === name);

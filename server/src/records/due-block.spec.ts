@@ -65,7 +65,9 @@ describe("复习队列的主题分块", () => {
     expect(dueOf(rows)).toEqual([ago(4 * DAY).getTime(), ago(2 * DAY).getTime(), ago(1 * DAY).getTime()]);
   });
 
-  it("纯新卡（dueAt 为 null）的块排在最后", () => {
+  it("防御性排序：dueAt 为 null 的块排在最后", () => {
+    // 生产 due() 已不传入未排期新卡（未学习卡片不进队列），
+    // 这里保留 null 用例作为排序工具的防御性覆盖，防止未来调用方传入脏数据时崩序
     const rows = [row("新专题", null), row("面试", ago(2 * DAY))];
     expect(blocksOf(rows).map((b) => b.tag)).toEqual(["面试", "新专题"]);
   });

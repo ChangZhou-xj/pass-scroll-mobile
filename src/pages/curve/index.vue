@@ -76,7 +76,7 @@
       </view>
     </view>
 
-    <!-- 难度系数与每日新卡 -->
+    <!-- 难度系数与每日新学习 -->
     <view class="mx-30rpx mt-40rpx rounded-24rpx bg-[#F7F2E7] p-32rpx">
       <view class="flex items-center justify-between">
         <view>
@@ -97,8 +97,8 @@
 
       <view class="mt-28rpx flex items-center justify-between">
         <view>
-          <text class="block text-26rpx font-semibold text-[#0D0D0D]">每日新卡 {{ srsStore.curve.newPerDay }}</text>
-          <text class="mt-6rpx block text-22rpx text-[#67676C]">防止一天灌进太多新卡</text>
+          <text class="block text-26rpx font-semibold text-[#0D0D0D]">每日新学习 {{ srsStore.curve.newPerDay }}</text>
+          <text class="mt-6rpx block text-22rpx text-[#67676C]">防止一天灌进太多新内容</text>
         </view>
         <view class="flex">
           <view class="h-64rpx w-64rpx flex-center rounded-full bg-white" @click="bumpNewPerDay(-5)">

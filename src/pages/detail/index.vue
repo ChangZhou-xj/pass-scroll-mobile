@@ -39,6 +39,16 @@
       </view>
     </view>
 
+    <!-- 学习状态：未学习显示入口按钮，已学习显示排期 -->
+    <view v-if="record" class="mx-30rpx mt-24rpx">
+      <PsButton v-if="!record.learnedAt" size="lg" block :disabled="learning" @click="handleLearn">
+        完成学习并加入复习
+      </PsButton>
+      <view v-else class="rounded-24rpx bg-[#F4F5F7] px-24rpx py-20rpx text-center">
+        <text class="text-24rpx text-[#0D0D0D]">{{ learningStatus }}</text>
+      </view>
+    </view>
+
     <!-- 空态 -->
     <view v-else-if="loadFailed" class="flex flex-col items-center pt-280rpx">
       <text class="text-28rpx text-[#67676C]">记录不存在或已删除</text>
@@ -68,13 +78,15 @@
 </template>
 
 <script setup lang="ts">
-import type { RecordItem } from "@/types/record";
+import type { CurveConfig, RecordItem } from "@/types/record";
 import { onLoad, onShow } from "@dcloudio/uni-app";
 import { getRecord } from "@/api/record";
 import { useRecordStore } from "@/store/record";
+import { useSrsStore } from "@/store/srs";
 import { masteryStyle } from "@/theme/tokens";
 import { formatTime } from "@/utils/format";
 import { parseNote } from "@/utils/markdown";
+import { formatDueLabel } from "@/utils/srs";
 
 // 本项目 pinia setup store 的 state/computed 在外部类型层未解包（见首页同模式），
 // 经 unknown 转换为运行时实际的解包形态，页面内按运行时结构消费。
@@ -92,7 +104,9 @@ type RecordStoreProxy = Omit<
 };
 
 const recordStore = useRecordStore() as unknown as RecordStoreProxy;
+const srsStore = useSrsStore() as unknown as { curve: CurveConfig };
 
+const learning = ref(false);
 const recordId = ref("");
 const remoteRecord = ref<RecordItem | undefined>(undefined);
 const loadFailed = ref(false);
@@ -101,6 +115,28 @@ const loadFailed = ref(false);
 const record = computed<RecordItem | undefined>(() => recordStore.getRecordById(recordId.value) ?? remoteRecord.value);
 
 const segments = computed(() => (record.value ? parseNote(record.value.content) : []));
+
+const learningStatus = computed(() => {
+  if (!record.value?.dueAt) return "已加入复习";
+  const due = formatDueLabel(record.value.dueAt);
+  return due === "已到期" ? "已到期，可前往复习" : `已加入复习，${due}到期`;
+});
+
+const handleLearn = async () => {
+  if (!record.value || record.value.learnedAt || learning.value) return;
+  learning.value = true;
+  try {
+    const learned = await recordStore.learnRecord(record.value.id, srsStore.curve);
+    // store 未含当前记录（列表过滤）时靠 remoteRecord 兜底回写；正常场景由 fetchList 对齐
+    remoteRecord.value = learned;
+    const dueText = learned.dueAt ? `，${formatDueLabel(learned.dueAt)}到期` : "";
+    uni.showToast({ title: `已加入复习${dueText}`, icon: "none" });
+  } catch {
+    // request.ts 已统一 toast；learning 在 finally 复位，不伪装成功
+  } finally {
+    learning.value = false;
+  }
+};
 
 async function loadRecord() {
   if (!recordId.value) {

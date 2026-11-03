@@ -142,6 +142,14 @@ export class CurveDto {
   newPerDay?: number;
 }
 
+/** POST /records/:id/learn——完成首次学习并按曲线首间隔排期 */
+export class LearnRecordDto {
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CurveDto)
+  curve?: CurveDto;
+}
+
 /** POST /records/:id/review——提交一次主动回忆的自评 */
 export class ReviewRecordDto {
   @IsIn(["AGAIN", "HARD", "GOOD", "EASY"], { message: "评分取值非法" })
@@ -166,14 +174,6 @@ export class DueQueryDto {
   @IsOptional()
   @IsString()
   palaceId?: string;
-
-  /** 每日新卡上限：曲线配置存在客户端，取队列时带上，否则服务端只能按默认值限额 */
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(200)
-  newPerDay?: number;
 
   /**
    * 只看某一个标签（主题）的卡片——学习曲线按标签分块，用户想"今天就啃这一个主题"时用它。

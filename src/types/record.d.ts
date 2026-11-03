@@ -17,7 +17,7 @@ export interface CurveConfig {
   hardFactor: number;
   /** 走到第几个阶段算"已掌握" */
   masteredStage: number;
-  /** 每日新卡上限 */
+  /** 每日首次学习上限 */
   newPerDay: number;
 }
 
@@ -61,11 +61,13 @@ export interface RecordItem {
   lapses: number;
   /** 累计复习次数（0 = 新卡） */
   reviewCount: number;
+  /** 首次完成学习时刻（毫秒）；null = 未学习，不得进入复习队列 */
+  learnedAt: number | null;
   /** 下次复习时刻（毫秒）；null = 从未排期 */
   dueAt: number | null;
   /** 上次复习时刻；null = 从未复习 */
   lastReviewedAt: number | null;
-  /** 首次复习时刻；null = 还没学第一次 */
+  /** 首次复习时刻；null = 还没有复习过 */
   firstReviewedAt: number | null;
   // ── 记忆宫殿位置 ──
   /** 所属宫殿 id；null = 未归档 */
@@ -84,7 +86,7 @@ export interface DueBlock {
 /** GET /records/due/tags 的单项：某个标签今天还有多少要复习 */
 export interface DueTagStat {
   name: string;
-  /** 今日待复习数（到期 + 新卡，与队列同口径） */
+  /** 今日待复习数（已学习且已到期，与队列同口径） */
   due: number;
   /** 该标签下笔记总数 */
   total: number;
@@ -94,12 +96,14 @@ export interface DueTagStat {
 export interface DueSummary {
   /**
    * 已排好序的队列：按【主题块】排——同一标签的卡片连成一整块，一块啃完再进下一块，
-   * 避免 #游戏 和 #面试 交替出现。块内仍是到期优先（逾期最久在前）→ 新卡在后。
+   * 避免 #游戏 和 #面试 交替出现。块内按到期时间升序（逾期最久在前），首次复习卡与旧卡统一排序。
    */
   list: RecordItem[];
   /** 与 list 对应的主题分块（顺序一致，count 之和 = list.length） */
   blocks: DueBlock[];
+  /** 到期旧卡数（reviewCount > 0） */
   dueCount: number;
+  /** 已学习且到期的首次复习卡数（reviewCount = 0） */
   freshCount: number;
   /** 今日已复习卡片数 */
   learnedToday: number;
@@ -151,6 +155,6 @@ export interface RecordStats {
     learning: number;
     mastered: number;
   };
-  /** 今日待复习卡片数（到期 + 新卡，与 GET /records/due 口径一致） */
+  /** 今日待复习卡片数（已学习且已到期，与 GET /records/due 口径一致） */
   dueCount: number;
 }

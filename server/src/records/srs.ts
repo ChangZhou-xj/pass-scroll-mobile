@@ -32,7 +32,7 @@ export interface CurveConfig {
   hardFactor: number;
   /** 达到第几个阶段算"已掌握"（驱动 mastery 联动） */
   masteredStage: number;
-  /** 每日新卡上限（防止一天灌进几百张新卡） */
+  /** 每日首次学习上限（防止一天灌进几百张新卡） */
   newPerDay: number;
 }
 

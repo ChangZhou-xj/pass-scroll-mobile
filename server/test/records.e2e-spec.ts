@@ -116,6 +116,30 @@ describe("Records (e2e)", () => {
     expect(res.body.code).toBe(10409);
   });
 
+  it("POST /records/:id/learn 返回学习时间和首次复习时间", async () => {
+    const created = await authed(tokenA).post("/records").send({ title: "A", content: "正文", tags: [] }).expect(201);
+    const id = created.body.data.id;
+
+    const learned = await authed(tokenA)
+      .post(`/records/${id}/learn`)
+      .send({ curve: { steps: [10, 1440] } })
+      .expect(201);
+
+    expect(learned.body.code).toBe(0);
+    expect(learned.body.data.learnedAt).toEqual(expect.any(Number));
+    expect(learned.body.data.dueAt - learned.body.data.learnedAt).toBe(600_000);
+    expect(learned.body.data.reviewCount).toBe(0);
+  });
+
+  it("未学习记录复习返回 10006 且 HTTP 200", async () => {
+    const created = await authed(tokenA).post("/records").send({ title: "A", content: "", tags: [] }).expect(201);
+    const res = await authed(tokenA)
+      .post(`/records/${created.body.data.id}/review`)
+      .send({ grade: "GOOD" })
+      .expect(200);
+    expect(res.body.code).toBe(10006);
+  });
+
   it("GET /records/stats 返回聚合结构且不被 :id 路由吃掉", async () => {
     await authed(tokenA)
       .post("/records")

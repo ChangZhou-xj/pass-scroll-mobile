@@ -93,15 +93,28 @@
 
         <view class="my-24rpx h-1rpx bg-[#C4B8EE]" />
 
-        <!-- markdown 分段；details 容器默认折叠，点开才对照答案——主动回忆的关键一跳 -->
-        <view v-for="(seg, index) in segments" :key="index">
-          <rich-text v-if="seg.type === 'html'" :nodes="seg.html" />
-          <MdContainer v-else :kind="seg.kind" :title="seg.title" :html="seg.html" @toggle="onAnswerToggle" />
+        <!-- 统一先回忆再显示答案：未揭示时只给提示与按钮，揭示后才渲染正文（含 :::details 折叠块） -->
+        <view v-if="!answerRevealed" class="flex flex-col items-center py-48rpx">
+          <text class="text-26rpx text-[#67676C]">先在心里回忆，再查看完整内容</text>
+          <view class="mt-24rpx w-full">
+            <PsButton size="lg" block @click="answerRevealed = true">显示答案</PsButton>
+          </view>
         </view>
+        <template v-else>
+          <view v-if="segments.length">
+            <view v-for="(seg, index) in segments" :key="index">
+              <rich-text v-if="seg.type === 'html'" :nodes="seg.html" />
+              <MdContainer v-else :kind="seg.kind" :title="seg.title" :html="seg.html" />
+            </view>
+          </view>
+          <view v-else class="py-32rpx text-center">
+            <text class="text-24rpx text-[#67676C]">这条笔记暂无正文，可前往详情补充</text>
+          </view>
+        </template>
 
         <view class="mt-24rpx flex justify-center">
           <text class="text-22rpx text-[#67676C]">
-            {{ showGrade ? "对照答案，给自己打个分" : "先在心里默答一遍，再点开「答案」" }}
+            {{ answerRevealed ? "对照答案，给自己打个分" : "先回忆标题对应的知识点，再显示答案" }}
           </text>
         </view>
       </view>
@@ -115,12 +128,12 @@
         </view>
       </view>
 
-      <!-- 四档自评：答案展开后浮现（没有 :::details 答案块的笔记直接给分，否则会卡死在"无法揭示"），
-           固定底部。按钮上写明"下次什么时候再见"——间隔重复产品最关键的反馈：
+      <!-- 四档自评：揭示答案后浮现，固定底部。按钮上写明"下次什么时候再见"——间隔重复产品最关键的反馈：
            让用户知道每一次选择都在改写自己的遗忘曲线 -->
       <view
-        v-if="showGrade || !hasAnswerBlock"
+        v-if="answerRevealed"
         class="fixed left-0 right-0 border-0 border-t-2rpx border-solid border-[#E3E3E6] bg-white px-30rpx py-16rpx"
+        :class="{ 'pointer-events-none': submitting }"
         :style="{ bottom: 'calc(102rpx + env(safe-area-inset-bottom))', zIndex: 61 }">
         <view class="mb-12rpx flex justify-center">
           <text class="text-20rpx text-[#67676C]">还记得吗？选一档，决定它下次何时出现</text>
@@ -151,7 +164,7 @@
         <view class="mr-20rpx">
           <PsButton variant="secondary" size="lg" @click="goPalace">去记忆宫殿</PsButton>
         </view>
-        <PsButton size="lg" @click="goHome">回首页</PsButton>
+        <PsButton size="lg" @click="goHome">去首页学习</PsButton>
       </view>
     </view>
 
@@ -211,7 +224,10 @@ const srsStore = useSrsStore() as unknown as SrsStoreProxy;
 const palaceId = ref<string>("");
 /** 主题聚焦（"今天只啃这一个标签"），由 ?tag= 带入或主题切换器点选 */
 const focusTag = ref<string>("");
-const showGrade = ref(false);
+/** 答案是否已揭示：所有卡统一先回忆再显示答案，揭示后才渲染正文与评分栏 */
+const answerRevealed = ref(false);
+/** 评分请求进行中：锁定评分与队列切换，避免同卡重复提交或提交途中换卡 */
+const submitting = ref(false);
 
 const current = computed<RecordItem | undefined>(() => srsStore.current);
 const currentBlock = computed(() => srsStore.currentBlock);
@@ -220,15 +236,21 @@ const focusableTags = computed(() =>
   srsStore.dueTags.filter((item) => item.due > 0 || item.name === srsStore.activeTag),
 );
 const segments = computed(() => (current.value ? parseNote(current.value.content) : []));
-// 有 :::details 答案块的笔记靠"展开答案"解锁打分；没有的（题干即全部内容）直接可打分
-const hasAnswerBlock = computed(() => segments.value.some((seg) => seg.type === "container" && seg.kind === "details"));
+
+// 换卡即重新隐藏答案（跳过/提交成功/筛选后队首变化都会触发）
+watch(
+  () => current.value?.id,
+  () => {
+    answerRevealed.value = false;
+  },
+);
 const palaceName = computed(() => {
   if (!palaceId.value) return "";
   const hit = srsStore.palaces.find((item) => item.id === palaceId.value);
   return hit ? `🏛 ${hit.name} 巡游中` : "";
 });
 const nextDueText = computed(() =>
-  srsStore.nextDueAt ? `下一张 ${formatDueLabel(srsStore.nextDueAt)}到期` : "写一条新笔记就能开始复习",
+  srsStore.nextDueAt ? `下一张 ${formatDueLabel(srsStore.nextDueAt)}到期` : "去首页完成学习后即可开始复习",
 );
 const progressPercent = computed(() => {
   const done = srsStore.learnedToday;
@@ -271,27 +293,27 @@ const tagChipStyle = (active: boolean) =>
 /** 待复习角标：选中态是墨底，得换成半透明白才看得见 */
 const dueBadgeStyle = (active: boolean) => `color:${active ? "rgba(255,255,255,0.72)" : T.secondaryText};`;
 
-const onAnswerToggle = (open: boolean) => {
-  if (open) showGrade.value = true;
-};
-
-/** 跳过：把当前卡挪到队尾，不改动它的调度（改天再见） */
+/** 跳过：把当前卡挪到队尾，不改动它的调度（改天再见）；队首 id 变化由 watch 复位答案 */
 const skipCurrent = () => {
-  if (srsStore.queue.length < 2) return;
+  if (submitting.value || srsStore.queue.length < 2) return;
   const [head, ...rest] = srsStore.queue;
   srsStore.queue = [...rest, head];
-  showGrade.value = false;
 };
 
 const submit = async (grade: Grade) => {
   const card = current.value;
-  if (!card) return;
-  showGrade.value = false;
-  const res = await srsStore.submitReview(card.id, grade);
-  if (!res.ok) return;
-  // 啃完一整块换主题时明确提示一下：让"系统性学完一块"这件事被感知到
-  if (res.nextTag) uni.showToast({ title: `本组完成，进入 #${res.nextTag}`, icon: "none" });
-  else uni.showToast({ title: "已排入下次复习", icon: "none" });
+  if (!card || submitting.value) return;
+  submitting.value = true;
+  try {
+    // 不复位 answerRevealed：评分失败时保留答案；成功后下一张卡/空队列的 id 变化由 watch 复位
+    const res = await srsStore.submitReview(card.id, grade);
+    if (!res.ok) return;
+    // 啃完一整块换主题时明确提示一下：让"系统性学完一块"这件事被感知到
+    if (res.nextTag) uni.showToast({ title: `本组完成，进入 #${res.nextTag}`, icon: "none" });
+    else uni.showToast({ title: "已排入下次复习", icon: "none" });
+  } finally {
+    submitting.value = false;
+  }
 };
 
 const goDetail = () => {
@@ -305,10 +327,11 @@ const goHome = () => uni.reLaunch({ url: "/pages/index/index" });
 
 /** 主题切换器：换主题 = 重新拉该标签的队列（宫殿巡游与主题聚焦互不影响） */
 const pickTag = async (name: string) => {
-  if (srsStore.activeTag === name) return;
+  if (submitting.value || srsStore.activeTag === name) return;
   focusTag.value = name;
   await srsStore.fetchDue({ palaceId: palaceId.value || undefined, tag: name || undefined });
-  showGrade.value = false;
+  // 即使筛选前后队首 id 相同（watch 不触发），也重新隐藏答案
+  answerRevealed.value = false;
 };
 
 /** 宫殿页点「开始巡游」会带 ?palace=<id>；首页点主题块会带 ?tag=<name> */
@@ -319,9 +342,10 @@ onLoad((options) => {
 });
 
 const exitPalace = async () => {
+  if (submitting.value) return;
   palaceId.value = "";
   await srsStore.fetchDue({ tag: focusTag.value || undefined });
-  showGrade.value = false;
+  answerRevealed.value = false;
 };
 
 onShow(async () => {
@@ -334,6 +358,7 @@ onShow(async () => {
     srsStore.fetchDueTags(),
     srsStore.fetchDue({ palaceId: palaceId.value || undefined, tag: focusTag.value || undefined }),
   ]);
-  showGrade.value = false;
+  // 从详情等页面返回时，当前卡也需重新回忆
+  answerRevealed.value = false;
 });
 </script>

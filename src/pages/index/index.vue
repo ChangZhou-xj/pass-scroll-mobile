@@ -19,7 +19,7 @@
       </text>
     </view>
 
-    <!-- 今日复习入口：间隔重复队列（到期卡 + 定额新卡），没待办时不占位。
+    <!-- 今日复习入口：已学习且到期的卡片（首次复习卡与旧卡统一排序），没待办时不占位。
          主题 chips 点了直接进"只啃这一块"的复习——学习曲线按标签分块，不把游戏和面试混着学 -->
     <view v-if="dueTotal > 0" class="mt-24rpx rounded-24rpx bg-[#F7F2E7] px-32rpx py-24rpx" @click="goReview">
       <view class="flex items-center justify-between">

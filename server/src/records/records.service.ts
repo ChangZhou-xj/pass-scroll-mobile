@@ -18,12 +18,21 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { Mastery, Prisma } from "@prisma/client";
 import { BusinessException } from "../common/exceptions/business.exception";
 import { PrismaService } from "../prisma/prisma.service";
-import { CreateRecordDto, DueQueryDto, QueryRecordDto, ReviewRecordDto, UpdateRecordDto } from "./dto/record.dto";
+import {
+  CreateRecordDto,
+  DueQueryDto,
+  LearnRecordDto,
+  QueryRecordDto,
+  ReviewRecordDto,
+  UpdateRecordDto,
+} from "./dto/record.dto";
 import { assertMasteryTransition } from "./mastery-state";
 import { serializeRecord, serializeSnapshot, serializeSnapshotDetail } from "./record.serializer";
-import { DEFAULT_CURVE, type Grade, normalizeCurve, schedule } from "./srs";
+import { type Grade, normalizeCurve, schedule } from "./srs";
 
 export const VERSION_CONFLICT = 10409;
+export const LEARN_QUOTA_EXCEEDED = 10005;
+export const RECORD_NOT_LEARNED = 10006;
 
 /** due() 里带标签查出来的行（含标签名，用于主题分块） */
 type DueRow = Prisma.RecordGetPayload<{ include: { tags: { include: { tag: true } } } }>;
@@ -53,7 +62,7 @@ export function tagBlocks(rows: DueRow[]): { tag: string; count: number }[] {
  * 主题分块重排：同一标签的卡片连成一整块，一块啃完再进下一块
  * （混排会让 #游戏 和 #面试 交替出现，大脑反复换主题，学完拼不出整块知识）。
  *
- * - 组内：按 dueAt 升序（逾期最久的在前，新卡 dueAt=null 排最后）
+ * - 组内：按 dueAt 升序（逾期最久的在前；dueAt=null 属防御分支，排最后）
  * - 组间：按组内最早到期时间升——最该被捞回来的主题先学；
  *         一样紧急时卡片多的先（一次啃透一块）；再一样按标签名稳定排序
  */
@@ -70,7 +79,7 @@ export function orderByTagBlock(rows: DueRow[]): DueRow[] {
     tag,
     list: [...list].sort((a, b) => dueOrLast(a) - dueOrLast(b)),
   }));
-  // 组内已按到期升序，第一张的 dueAt 就是这块最急的时间；纯新卡的块排最后
+  // 组内已按到期升序，第一张的 dueAt 就是这块最急的时间；dueAt=null 的块排最后（防御）
   const urgency = (list: DueRow[]) => dueOrLast(list[0]);
   return blocks
     .sort((a, b) => urgency(a.list) - urgency(b.list) || b.list.length - a.list.length || a.tag.localeCompare(b.tag))
@@ -199,17 +208,18 @@ export class RecordsService {
   /**
    * 复习队列（GET /records/due）——"今天该复习哪些卡"的排序结果
    *
-   * 队列 =【已到期的旧卡（按逾期最久排前）】+【今日配额内的新卡】：
-   *   - 到期卡：dueAt <= now。按 dueAt 升序——逾期越久越靠前，这是在遗忘曲线上最该被捞回来的那批。
-   *   - 新卡：reviewCount = 0（从未复习过）。受曲线配置的每日新卡上限约束，防止一天灌进几百张。
-   *   - palaceId：宫殿巡游模式只取某个宫殿内的卡片，仍按到期优先 + 位置顺序排好。
+   * 队列 =【已学习且到期的卡片】（learnedAt 非空且 dueAt <= now，按逾期最久排前）：
+   *   - 未学习的卡片一律不进队列——新卡由详情页"完成学习"（learn）引入调度，
+   *     每日新卡上限也在 learn 里校验，这里不再承担配额。
+   *   - 首次卡（reviewCount = 0）与旧卡在同一队列里按 dueAt 混排，两者仅用于统计拆分。
+   *   - palaceId：宫殿巡游模式只取某个宫殿内的卡片，同一口径过滤。
    *   - tag：主题聚焦模式（"今天只啃面试这一块"）。
    *
    * 【为什么不直接按 dueAt 混排】混排会让 #游戏 和 #面试 的卡片交替出现，
    * 大脑在主题之间反复切换，学完记不住"这一块到底有哪些"。所以排完序还要过一次
    * orderByTagBlock：同一标签的卡片连成一整块，一块啃完再进下一块（系统性学习 + 主题内的复现）。
    *
-   * 统计一并返回（前端顶部进度条/主题块要用）：到期数 / 新卡数 / 今日已复习数 / 下一张到期时间 / 主题分块。
+   * 统计一并返回（前端顶部进度条/主题块要用）：到期旧卡数 / 到期首次卡数 / 今日已复习数 / 下一张到期时间 / 主题分块。
    */
   async due(userId: string, query: DueQueryDto) {
     const now = new Date();
@@ -221,48 +231,42 @@ export class RecordsService {
     const todayStart = new Date(now);
     todayStart.setHours(0, 0, 0, 0);
 
-    const [dueCount, freshCount, learnedToday, introducedToday] = await this.prisma.$transaction([
-      this.prisma.record.count({ where: { ...base, reviewCount: { gt: 0 }, dueAt: { lte: now } } }),
-      this.prisma.record.count({ where: { ...base, reviewCount: 0 } }),
+    // 统一口径：已学习且到期。首次卡/旧卡只是同一集合按 reviewCount 的统计拆分
+    const dueWhere: Prisma.RecordWhereInput = {
+      ...base,
+      learnedAt: { not: null },
+      dueAt: { lte: now },
+    };
+    const [dueCount, freshCount, learnedToday] = await this.prisma.$transaction([
+      this.prisma.record.count({ where: { ...dueWhere, reviewCount: { gt: 0 } } }),
+      this.prisma.record.count({ where: { ...dueWhere, reviewCount: 0 } }),
       this.prisma.record.count({ where: { ...base, lastReviewedAt: { gte: todayStart } } }),
-      // 今日已"引入"的新卡数（首次复习发生在今天）→ 决定今天还能放几张新卡进来
-      this.prisma.record.count({ where: { ...base, firstReviewedAt: { gte: todayStart } } }),
     ]);
 
-    // 具体间隔由提交评分时带的曲线决定；这里只用到每日新卡上限（曲线在客户端，随请求带上）
-    const freshQuota = Math.max(0, (query.newPerDay ?? DEFAULT_CURVE.newPerDay) - introducedToday);
-
-    const [dueRows, freshRows, nextRow] = await this.prisma.$transaction([
+    const [rows, nextRow] = await this.prisma.$transaction([
       this.prisma.record.findMany({
-        where: { ...base, reviewCount: { gt: 0 }, dueAt: { lte: now } },
+        where: dueWhere,
         include: { tags: { include: { tag: true } } },
         orderBy: [{ dueAt: "asc" }],
         take: limit,
       }),
-      this.prisma.record.findMany({
-        where: { ...base, reviewCount: 0 },
-        include: { tags: { include: { tag: true } } },
-        orderBy: { createdAt: "asc" },
-        take: Math.min(freshQuota, limit),
-      }),
       // 队列清空后告诉用户"下一张什么时候来"，空态才不会只写一句"没有了"
       this.prisma.record.findFirst({
-        where: { ...base, dueAt: { gt: now } },
+        where: { ...base, learnedAt: { not: null }, dueAt: { gt: now } },
         orderBy: { dueAt: "asc" },
         select: { dueAt: true },
       }),
     ]);
 
-    // 到期卡 + 新卡拼好后按"主题块"重排：同标签连续 → 一块学完再切下一块
-    const ordered = orderByTagBlock([...dueRows, ...freshRows]);
-    const list = ordered.slice(0, limit);
+    // 按"主题块"重排：同标签连续 → 一块学完再切下一块
+    const list = orderByTagBlock(rows).slice(0, limit);
 
     return {
       list: list.map(serializeRecord),
       // blocks 按截断后的真实队列重算，前端"本组还剩几张"才不会说谎
       blocks: tagBlocks(list),
       dueCount,
-      freshCount: Math.min(freshCount, freshQuota),
+      freshCount,
       learnedToday,
       nextDueAt: nextRow?.dueAt ? nextRow.dueAt.getTime() : null,
     };
@@ -270,13 +274,14 @@ export class RecordsService {
 
   /**
    * 今日待复习按标签统计——给标签栏/主题切换器用：哪个主题今天还有几张要复习。
-   * 与 due() 同一口径（到期 + 新卡），无标签的卡片不计入任何标签（它们归"未分类"块）。
+   * 与 due() 同一口径（已学习且到期），无标签的卡片不计入任何标签（它们归"未分类"块）。
    */
   async dueTags(userId: string) {
     const now = new Date();
     const dueWhere: Prisma.RecordWhereInput = {
       userId,
-      OR: [{ reviewCount: { gt: 0 }, dueAt: { lte: now } }, { reviewCount: 0 }],
+      learnedAt: { not: null },
+      dueAt: { lte: now },
     };
     const [dueRows, tagRows] = await this.prisma.$transaction([
       this.prisma.record.findMany({
@@ -299,6 +304,41 @@ export class RecordsService {
   }
 
   /**
+   * 完成首次学习（POST /records/:id/learn）——只写 learnedAt + 首次 dueAt，不算一次复习。
+   *
+   * 与 review() 的分工：learn 把一张"从未学过"的新卡引入调度（dueAt = now + 曲线首间隔），
+   * reviewCount/stage/mastery 一律不动；之后的每次回忆都走 review() 的四档自评。
+   * 与 togglePin/setMastery 一样显式回写 updatedAt——完成学习不该把笔记顶到列表最前。
+   */
+  async learn(userId: string, id: string, dto: LearnRecordDto) {
+    const owned = await this.findOwned(userId, id);
+    // 幂等先于配额：已学习记录即使今天额度已满，也不能因重复点击而报错或改期。
+    if (owned.learnedAt) return this.detail(userId, id);
+
+    const curve = normalizeCurve(dto.curve);
+    const now = new Date();
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const learnedToday = await this.prisma.record.count({
+      where: { userId, learnedAt: { gte: todayStart } },
+    });
+    if (learnedToday >= curve.newPerDay) {
+      throw new BusinessException(LEARN_QUOTA_EXCEEDED, "今日新学习数量已达上限，明天再来吧");
+    }
+
+    // 条件写入保证同卡并发学习幂等：未抢到写入的调用与成功调用一样，重读并返回已持久化的首次调度。
+    await this.prisma.record.updateMany({
+      where: { id: owned.id, userId, learnedAt: null },
+      data: {
+        learnedAt: now,
+        dueAt: new Date(now.getTime() + curve.steps[0] * 60_000),
+        updatedAt: owned.updatedAt,
+      },
+    });
+    return this.detail(userId, id);
+  }
+
+  /**
    * 提交一次复习（POST /records/:id/review）——主动回忆 + 间隔重复的落库点
    *
    * 流程：归属校验 → 洗曲线 → schedule 算下次调度 → 推导掌握度（过状态机）→ 落库。
@@ -307,6 +347,10 @@ export class RecordsService {
    */
   async review(userId: string, id: string, dto: ReviewRecordDto) {
     const owned = await this.findOwned(userId, id);
+    // 学习状态守卫：必须先完成首次学习才能评分（不检查 dueAt——队列负责到期展示，这里保留用户对已学习卡片的既有复习能力）
+    if (!owned.learnedAt) {
+      throw new BusinessException(RECORD_NOT_LEARNED, "请先在详情页完成学习");
+    }
     const curve = normalizeCurve(dto.curve);
     const now = new Date();
     const next = schedule(
@@ -378,9 +422,9 @@ export class RecordsService {
       this.prisma.record.count({ where: { userId } }),
       this.prisma.record.count({ where: { userId, isPinned: true } }),
       this.prisma.tag.count({ where: { userId } }),
-      // 今日待复习：已排期且到期的卡 + 从未复习的新卡（与 due() 的口径一致）
+      // 今日待复习：已学习且到期的卡（与 due() 的口径一致）
       this.prisma.record.count({
-        where: { userId, OR: [{ reviewCount: { gt: 0 }, dueAt: { lte: new Date() } }, { reviewCount: 0 }] },
+        where: { userId, learnedAt: { not: null }, dueAt: { lte: new Date() } },
       }),
     ]);
     // groupBy 单独调用：放进 $transaction 数组会让泛型 T 退化为 RecordGroupByArgs，

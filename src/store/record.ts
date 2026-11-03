@@ -14,8 +14,16 @@
 // src/store/record.ts
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
-import type { Mastery, RecordForm, RecordItem, RecordQuery } from "@/types/record";
-import { createRecord, deleteRecord, listRecords, togglePinRecord, updateMastery, updateRecord } from "@/api/record";
+import type { CurveConfig, Mastery, RecordForm, RecordItem, RecordQuery } from "@/types/record";
+import {
+  createRecord,
+  deleteRecord,
+  learnRecord as learnRecordRequest,
+  listRecords,
+  togglePinRecord,
+  updateMastery,
+  updateRecord,
+} from "@/api/record";
 
 const CACHE_KEY = "pass_scroll_records";
 
@@ -55,6 +63,10 @@ export const useRecordStore = defineStore("record", () => {
           ease: item.ease ?? 2.5,
           lapses: item.lapses ?? 0,
           reviewCount: item.reviewCount ?? 0,
+          // 旧缓存没有 learnedAt：有复习痕迹（reviewCount/firstReviewedAt）说明已学习，用最早的时间兜底
+          learnedAt:
+            item.learnedAt ??
+            (item.reviewCount || item.firstReviewedAt ? (item.firstReviewedAt ?? item.createdAt ?? null) : null),
           dueAt: item.dueAt ?? null,
           lastReviewedAt: item.lastReviewedAt ?? null,
           firstReviewedAt: item.firstReviewedAt ?? null,
@@ -110,6 +122,16 @@ export const useRecordStore = defineStore("record", () => {
     await fetchList();
   }
 
+  /** 完成首次学习：失败时 Promise 直接 reject（request.ts 已 toast），不提前动本地数据 */
+  async function learnRecord(id: string, curve: CurveConfig): Promise<RecordItem> {
+    const learned = await learnRecordRequest(id, curve);
+    // 先同步已存在的同 id 项，避免列表刷新失败时详情页继续读到旧缓存；不新增过滤列表成员。
+    records.value = records.value.map((item) => (item.id === id ? learned : item));
+    persist();
+    await fetchList();
+    return learned;
+  }
+
   return {
     records,
     total,
@@ -125,5 +147,6 @@ export const useRecordStore = defineStore("record", () => {
     removeRecord,
     togglePin,
     setMastery,
+    learnRecord,
   };
 });

@@ -84,7 +84,7 @@ npm run crawl:github -- --user <用户名> [--dir "子目录"] # 抓 GitHub 目�
 
 > 注：spec `2026-09-24-articlepilot-features-design.md` 曾把「掌握度复习算法（间隔重复）」列为不做，本功能已落地，以本节为准。
 
-**一条笔记 = 一张记忆卡片**。`Record` 上新增调度字段：`stage/ease/lapses/reviewCount/dueAt/lastReviewedAt/firstReviewedAt`，
+**一条笔记 = 一张记忆卡片**。`Record` 上新增调度字段：`stage/ease/lapses/reviewCount/dueAt/lastReviewedAt/firstReviewedAt/learnedAt`，
 以及空间位置 `palaceId/palaceOrder`（`Palace` 表 = 一条熟悉的空间路径，卡片按 `palaceOrder` 当桩位摆上去——位置法/记忆宫殿）。
 
 算法（艾宾浩斯梯度 + SM-2 难度因子）在 [server/src/records/srs.ts](server/src/records/srs.ts)，纯函数、`now` 由调用方传入便于钉死时间单测。
@@ -93,8 +93,11 @@ npm run crawl:github -- --user <用户名> [--dir "子目录"] # 抓 GitHub 目�
 - 四档自评：`AGAIN` 打回 stage 0 且 `lapses+1`、`HARD` 停原阶段但间隔打折、`GOOD` stage+1、`EASY` stage+1 且间隔×`easyBonus`。
 - 掌握度由评分推导（`stage >= curve.masteredStage` → `MASTERED`），但仍过 `mastery-state.ts` 状态机；**同值不调用** `assertMasteryTransition`（它对 `from===to` 也抛 10002）。
 - 复习**不改列表排序**：`review()` 与 `setMastery()`/`togglePin()` 一样显式回写旧 `updatedAt`。
-- **记忆曲线配置不落库**：它是这台设备上的个人偏好，存 storage `pass_scroll_curve`，每次 `POST /records/:id/review` 随 `grade` 带给后端（`normalizeCurve` 兜底清洗）；每日新卡上限另由 `GET /records/due?newPerDay=` 带入。换设备曲线不跟随，但 `dueAt/stage` 在服务端，复习进度不丢。
-- 队列口径（`GET /records/due`）：到期卡（`dueAt <= now`，按 `dueAt` 升序 = 逾期最久在前）+ 定额新卡（`reviewCount = 0`），可传 `palaceId` 做宫殿巡游、传 `tag` 做主题聚焦。`stats` 里的 `dueCount` 用同一口径。
+- **记忆曲线配置不落库**：它是这台设备上的个人偏好，存 storage `pass_scroll_curve`，每次 `POST /records/:id/review` 与 `POST /records/:id/learn` 随曲线带给后端（`normalizeCurve` 兜底清洗）。`newPerDay` 表示**每日首次学习上限**，由 learn 请求带入，不再由 due query 携带。换设备曲线不跟随，但 `dueAt/stage/learnedAt` 在服务端，学习与复习进度不丢。
+- **首次学习与复习分离**：`learnedAt = null` 表示未学习；详情页调用 `POST /records/:id/learn`，按当前曲线首间隔写首次 `dueAt`，不增加 `reviewCount`，也不改变掌握度和列表排序（同样回写旧 `updatedAt`）。
+- `POST /records/:id/review` 拒绝未学习笔记（10006）；每日首次学习超限返回 10005。
+- 队列口径（`GET /records/due`）：统一为「已学习且到期」（`learnedAt != null && dueAt <= now`，按 `dueAt` 升序 = 逾期最久在前）；`freshCount` 只计其中 `reviewCount = 0` 的首次到期卡。可传 `palaceId` 做宫殿巡游、传 `tag` 做主题聚焦。`due/tags`、`stats.dueCount`、宫殿巡游必须使用同一口径。
+- **复习页先只显示标题**，点击「显示答案」后才渲染正文并解锁四档评分；不能依赖 `:::details` 才能评分。
 - **队列要按标签分块，不能混排**：排完序还要过 [records.service.ts](server/src/records/records.service.ts) 的 `orderByTagBlock`——同一标签的卡片连成一整块，块内到期优先，块间按"最逾期"排。混排会让 #游戏 和 #面试 交替出现，大脑反复换主题，学完拼不出整块知识（单测见 `due-block.spec.ts`）。返回里的 `blocks` 给前端显示"本组还剩几张"。
 - 卡片的"主标签"= `tags[0]`（Prisma 不带 orderBy 时按桥接表主键返回，顺序稳定，前后端算出来必然一致）；没标签的归"未分类"块。
 - `GET /records/due/tags` 给出「每个标签今日待复习数 + 笔记总数」，标签栏角标与复习页主题切换器都用它；首页标签栏的**展示顺序**也直接用它（有待复习的在前）。

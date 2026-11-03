@@ -1,6 +1,8 @@
 // RecordsService 集成测试——直接调 service 打真实测试库（机制说明见 auth.service.spec.ts 头注）。
 // 覆盖：CRUD、排序不变量、归属 404、版本快照留存/恢复、乐观锁 10409、掌握度状态机、stats 聚合。
 import { Test } from "@nestjs/testing";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { PrismaService } from "../prisma/prisma.service";
 import { resetDatabase } from "../../test/reset-db";
 import { RecordsService } from "./records.service";
@@ -43,6 +45,31 @@ describe("RecordsService", () => {
     });
     expect(typeof record.createdAt).toBe("number");
     expect(typeof record.updatedAt).toBe("number");
+    expect(record.learnedAt).toBeNull();
+  });
+
+  it("迁移只回填已复习记录的 learnedAt", async () => {
+    const reviewed = await service.create(userId, { title: "已复习", content: "", tags: [] });
+    const fresh = await service.create(userId, { title: "未学习", content: "", tags: [] });
+    const firstReviewedAt = new Date("2026-10-01T08:00:00.000Z");
+    await prisma.record.update({
+      where: { id: reviewed.id },
+      data: { reviewCount: 1, firstReviewedAt, learnedAt: null },
+    });
+
+    // 直接执行真实迁移文件里的回填 SQL，避免测试一份与迁移不一致的副本
+    const migration = readFileSync(
+      join(__dirname, "../../prisma/migrations/20261103090000_add_record_learned_at/migration.sql"),
+      "utf8",
+    );
+    const backfill = migration.match(/UPDATE `Record`[\s\S]*?;/)?.[0];
+    expect(backfill).toBeDefined();
+    await prisma.$executeRawUnsafe(backfill!);
+
+    const reviewedRow = await prisma.record.findUniqueOrThrow({ where: { id: reviewed.id } });
+    const freshRow = await prisma.record.findUniqueOrThrow({ where: { id: fresh.id } });
+    expect(reviewedRow.learnedAt).toEqual(firstReviewedAt);
+    expect(freshRow.learnedAt).toBeNull();
   });
 
   it("list 排序：置顶优先，其余按 updatedAt 倒序", async () => {
@@ -199,6 +226,120 @@ describe("RecordsService", () => {
       });
       const ok = await service.update(userId, record.id, { content: "v2" });
       expect(ok.version).toBe(2);
+    });
+  });
+
+  describe("首次学习", () => {
+    it("按曲线首间隔排期且不改变复习与排序状态", async () => {
+      const record = await service.create(userId, { title: "A", content: "正文", tags: [] });
+      const learned = await service.learn(userId, record.id, { curve: { steps: [15, 1440] } });
+
+      expect(learned.learnedAt).not.toBeNull();
+      expect(learned.dueAt! - learned.learnedAt!).toBe(15 * 60_000);
+      expect(learned.reviewCount).toBe(0);
+      expect(learned.stage).toBe(0);
+      expect(learned.mastery).toBe("NONE");
+      expect(learned.updatedAt).toBe(record.updatedAt);
+    });
+
+    it("重复学习幂等，且已学习记录在配额用完后仍可返回", async () => {
+      const first = await service.create(userId, { title: "A", content: "", tags: [] });
+      const second = await service.create(userId, { title: "B", content: "", tags: [] });
+      const learned = await service.learn(userId, first.id, { curve: { steps: [10], newPerDay: 1 } });
+
+      const repeated = await service.learn(userId, first.id, { curve: { steps: [99], newPerDay: 1 } });
+      expect(repeated.dueAt).toBe(learned.dueAt);
+      expect(repeated.learnedAt).toBe(learned.learnedAt);
+
+      await expect(service.learn(userId, second.id, { curve: { steps: [10], newPerDay: 1 } })).rejects.toMatchObject({
+        businessCode: 10005,
+      });
+    });
+
+    it("同一记录并发学习只接受首次写入，两个调用返回持久化后的同一调度", async () => {
+      const record = await service.create(userId, { title: "A", content: "", tags: [] });
+
+      const [first, second] = await Promise.all([
+        service.learn(userId, record.id, { curve: { steps: [10] } }),
+        service.learn(userId, record.id, { curve: { steps: [20] } }),
+      ]);
+      const persisted = await service.detail(userId, record.id);
+
+      expect(second.learnedAt).toBe(first.learnedAt);
+      expect(second.dueAt).toBe(first.dueAt);
+      expect(persisted.learnedAt).toBe(first.learnedAt);
+      expect(persisted.dueAt).toBe(first.dueAt);
+      expect(first.reviewCount).toBe(0);
+      expect(second.reviewCount).toBe(0);
+      expect(persisted.reviewCount).toBe(0);
+    });
+
+    it("不能学习他人的记录", async () => {
+      const otherId = await createOtherUser();
+      const record = await service.create(userId, { title: "A", content: "", tags: [] });
+      await expect(service.learn(otherId, record.id, {})).rejects.toMatchObject({ status: 404 });
+    });
+  });
+
+  describe("复习前置守卫", () => {
+    it("未学习记录不能评分，完成学习后可以首次评分", async () => {
+      const record = await service.create(userId, { title: "A", content: "", tags: [] });
+      await expect(service.review(userId, record.id, { grade: "GOOD" })).rejects.toMatchObject({
+        businessCode: 10006,
+      });
+
+      await service.learn(userId, record.id, { curve: { steps: [10] } });
+      const reviewed = await service.review(userId, record.id, { grade: "GOOD", curve: { steps: [10, 1440] } });
+      expect(reviewed.reviewCount).toBe(1);
+      expect(reviewed.firstReviewedAt).not.toBeNull();
+    });
+  });
+
+  describe("到期队列统一口径", () => {
+    it("复习队列只含已学习且到期卡片，所有统计使用同一口径", async () => {
+      const unlearned = await service.create(userId, { title: "未学习", content: "", tags: ["MySQL"] });
+      const future = await service.create(userId, { title: "未到期", content: "", tags: ["MySQL"] });
+      const fresh = await service.create(userId, { title: "首次到期", content: "", tags: ["MySQL"] });
+      const old = await service.create(userId, { title: "旧卡到期", content: "", tags: ["MySQL"] });
+      const now = new Date();
+      const past = new Date(now.getTime() - 60_000);
+      const later = new Date(now.getTime() + 60 * 60_000);
+
+      await prisma.record.update({ where: { id: unlearned.id }, data: { dueAt: past } });
+      await prisma.record.update({ where: { id: future.id }, data: { learnedAt: now, dueAt: later } });
+      await prisma.record.update({ where: { id: fresh.id }, data: { learnedAt: now, dueAt: past } });
+      await prisma.record.update({
+        where: { id: old.id },
+        data: { learnedAt: now, dueAt: past, reviewCount: 2, lastReviewedAt: now },
+      });
+
+      const due = await service.due(userId, { limit: 50 });
+      expect(new Set(due.list.map((item) => item.id))).toEqual(new Set([fresh.id, old.id]));
+      expect(due.dueCount).toBe(1);
+      expect(due.freshCount).toBe(1);
+      expect(due.nextDueAt).toBe(later.getTime());
+
+      const tags = await service.dueTags(userId);
+      expect(tags.find((item) => item.name === "MySQL")).toMatchObject({ due: 2, total: 4 });
+      expect((await service.stats(userId)).dueCount).toBe(2);
+    });
+
+    it("宫殿巡游同样排除未学习卡片", async () => {
+      const palace = await prisma.palace.create({ data: { userId, name: "回家路线", emoji: "🏠" } });
+      const unlearned = await service.create(userId, { title: "未学习", content: "", tags: [] });
+      const dueCard = await service.create(userId, { title: "已到期", content: "", tags: [] });
+      const now = new Date();
+      await prisma.record.update({
+        where: { id: unlearned.id },
+        data: { palaceId: palace.id, dueAt: new Date(now.getTime() - 60_000) },
+      });
+      await prisma.record.update({
+        where: { id: dueCard.id },
+        data: { palaceId: palace.id, learnedAt: now, dueAt: new Date(now.getTime() - 60_000) },
+      });
+
+      const result = await service.due(userId, { limit: 50, palaceId: palace.id });
+      expect(result.list.map((item) => item.id)).toEqual([dueCard.id]);
     });
   });
 

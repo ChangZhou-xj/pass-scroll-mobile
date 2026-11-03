@@ -19,6 +19,8 @@
  *   DELETE /records/:id        删除
  *   POST   /records/:id/pin    置顶切换
  *   POST   /records/:id/mastery 掌握度标记（状态机校验）
+ *   POST   /records/:id/learn  完成首次学习（写 learnedAt + 首次 dueAt，受每日新学习配额限制）
+ *   POST   /records/:id/review 提交一次复习自评（间隔重复调度）
  *   GET    /records/:id/snapshots[/:sid]  历史版本列表/详情
  *   POST   /records/:id/snapshots/:sid/restore  恢复旧版本
  */
@@ -28,6 +30,7 @@ import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorat
 import {
   CreateRecordDto,
   DueQueryDto,
+  LearnRecordDto,
   QueryRecordDto,
   ReviewRecordDto,
   UpdateMasteryDto,
@@ -105,6 +108,12 @@ export class RecordsController {
   @Post(":id/mastery")
   setMastery(@CurrentUser() user: AuthUser, @Param("id") id: string, @Body() dto: UpdateMasteryDto) {
     return this.records.setMastery(user.userId, id, dto.to);
+  }
+
+  // 完成首次学习：只写 learnedAt + 首次 dueAt，不算一次复习
+  @Post(":id/learn")
+  learn(@CurrentUser() user: AuthUser, @Param("id") id: string, @Body() dto: LearnRecordDto) {
+    return this.records.learn(user.userId, id, dto);
   }
 
   // 提交一次复习自评（AGAIN/HARD/GOOD/EASY）→ 推进间隔重复调度

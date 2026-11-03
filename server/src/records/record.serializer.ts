@@ -32,6 +32,7 @@ export function serializeRecord(record: RecordWithTags) {
     ease: record.ease,
     lapses: record.lapses,
     reviewCount: record.reviewCount,
+    learnedAt: record.learnedAt ? record.learnedAt.getTime() : null,
     dueAt: record.dueAt ? record.dueAt.getTime() : null,
     lastReviewedAt: record.lastReviewedAt ? record.lastReviewedAt.getTime() : null,
     firstReviewedAt: record.firstReviewedAt ? record.firstReviewedAt.getTime() : null,
