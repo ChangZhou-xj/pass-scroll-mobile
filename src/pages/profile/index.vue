@@ -73,7 +73,7 @@
         <text class="mt-8rpx font-mono text-22rpx text-[#67676C]">v0.1.0</text>
       </view>
 
-      <!-- 记忆宫殿 + 记忆曲线 + 我的简历 + 修改密码 + 退出登录：一张白卡五行（退出为红字行） -->
+      <!-- 记忆宫殿 + 记忆曲线 + 我的简历 + 修改密码 + 关于通关秘籍 + 退出登录：一张白卡六行（退出为红字行） -->
       <view class="mx-30rpx mt-40rpx rounded-48rpx border-2rpx border-solid border-[#E3E3E6] bg-white px-30rpx">
         <view
           class="h-100rpx flex items-center justify-between border-0 border-b-2rpx border-solid border-[#EFEFF1]"
@@ -106,6 +106,12 @@
           class="h-100rpx flex items-center justify-between border-0 border-b-2rpx border-solid border-[#EFEFF1]"
           @click="goPassword">
           <text class="text-28rpx text-[#0D0D0D]">修改密码</text>
+          <text class="text-28rpx text-[#67676C]">›</text>
+        </view>
+        <view
+          class="h-100rpx flex items-center justify-between border-0 border-b-2rpx border-solid border-[#EFEFF1]"
+          @click="goLanding">
+          <text class="text-28rpx text-[#0D0D0D]">关于通关秘籍</text>
           <text class="text-28rpx text-[#67676C]">›</text>
         </view>
         <view class="h-100rpx flex items-center" @click="handleLogout">
@@ -233,6 +239,10 @@ const goPalace = () => {
 
 const goCurve = () => {
   uni.navigateTo({ url: "/pages/curve/index" });
+};
+
+const goLanding = () => {
+  uni.navigateTo({ url: "/pages/landing/index" });
 };
 
 // 简历预览页自行处理登录守卫与 PDF 打开

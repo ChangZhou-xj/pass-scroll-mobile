@@ -35,7 +35,7 @@ pnpm commit              # cz-git 交互式提交（推荐，见「提交规范�
 ### 后端（均在 `server/` 下执行）
 
 ```bash
-npm run start:dev                       # nest start --watch，监听 3100
+npm run serve                       # nest start --watch，监听 3100
 npm test                                # jest 单元测试（rootDir=src，匹配 *.spec.ts）
 npx jest records.service                # 单个测试文件
 npx jest -t "乐观锁"                     # 按用例名匹配

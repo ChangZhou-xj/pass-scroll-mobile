@@ -9,17 +9,17 @@
   },
   "pages": [
     {
-      "path": "pages/landing/index",
-      "style": {
-        "navigationBarTextStyle": "white",
-        "backgroundColor": "#000000"
-      }
-    },
-    {
       "path": "pages/index/index",
       "style": {
         "enablePullDownRefresh": true,
         "backgroundColor": "#FFFFFF"
+      }
+    },
+    {
+      "path": "pages/landing/index",
+      "style": {
+        "navigationBarTextStyle": "white",
+        "backgroundColor": "#000000"
       }
     },
     {
