@@ -79,7 +79,7 @@ function injectStyles(html: string): string {
   out = out.replace(/<pre(?![^>]*style=)([^>]*)>/g, `<pre style="${PRE_STYLE}"$1>`);
   out = out.replace(/<code(?![^>]*style=)([^>]*)>/g, `<code style="${CODE_INLINE_STYLE}"$1>`);
   for (const [tag, style] of Object.entries(TAG_STYLES)) {
-    out = out.replace(new RegExp(`<${tag}(?![^>]*style=)([^>]*)>`, "g"), `<${tag} style="${style}"$1>`);
+    out = out.replace(new RegExp(`<${tag}(?![\\w-])(?![^>]*style=)([^>]*)>`, "g"), `<${tag} style="${style}"$1>`);
   }
   return adaptUnits(out);
 }
