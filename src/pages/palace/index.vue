@@ -139,6 +139,7 @@ import { useRecordStore } from "@/store/record";
 import { useSrsStore } from "@/store/srs";
 import { useUserStore } from "@/store/modules/user";
 import { T } from "@/theme/tokens";
+import { goToTab } from "@/utils/navigation";
 import { formatDueLabel, strengthPercent } from "@/utils/srs";
 
 type SrsStoreProxy = Omit<ReturnType<typeof useSrsStore>, "curve" | "palaces"> & {
@@ -241,7 +242,9 @@ const saveOrder = async (palaceId: string) => {
 };
 
 const startTour = (palaceId: string) => {
-  uni.reLaunch({ url: `/pages/review/index?palace=${palaceId}` });
+  // tab 页保活：复习页已在栈中时无法带 URL 参数，走 store 一次性换手
+  srsStore.pendingReviewPalace = palaceId;
+  goToTab("pages/review/index");
 };
 
 onShow(async () => {

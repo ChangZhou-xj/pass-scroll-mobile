@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mdToBlocks, parseNote } from "./markdown";
+import { NOTE_CACHE_MAX, flattenInline, mdToBlocks, noteCacheSize, parseNote, resetNoteCache } from "./markdown";
 
 describe("mdToBlocks - 块级结构", () => {
   it("标题解析为 heading 节点", () => {
@@ -113,5 +113,79 @@ describe("parseNote - 容器切分", () => {
 
   it("空内容返回空数组", () => {
     expect(parseNote("")).toEqual([]);
+  });
+});
+
+describe("flattenInline - 行内压平", () => {
+  const text = (value: string) => ({ type: "text" as const, text: value });
+
+  it("普通文本与加粗拆成两段，类名分别携带", () => {
+    const runs = flattenInline([text("前"), { type: "strong", children: [text("粗")] }, text("后")]);
+    expect(runs).toEqual([
+      { text: "前", cls: "" },
+      { text: "粗", cls: "md-strong" },
+      { text: "后", cls: "" },
+    ]);
+  });
+
+  it("相邻同一样式合并为一段", () => {
+    const runs = flattenInline([
+      { type: "strong", children: [text("A")] },
+      { type: "strong", children: [text("B")] },
+    ]);
+    expect(runs).toEqual([{ text: "AB", cls: "md-strong" }]);
+  });
+
+  it("嵌套样式叠加类名，不产生嵌套节点", () => {
+    const runs = flattenInline([{ type: "strong", children: [{ type: "em", children: [text("又粗又斜")] }] }]);
+    expect(runs).toEqual([{ text: "又粗又斜", cls: "md-strong md-em" }]);
+  });
+
+  it("换行退化成一个换行符", () => {
+    expect(flattenInline([text("A"), { type: "br" }, text("B")])).toEqual([
+      { text: "A", cls: "" },
+      { text: "\n", cls: "" },
+      { text: "B", cls: "" },
+    ]);
+  });
+
+  it("行内代码与链接带各自类名", () => {
+    const runs = flattenInline([
+      { type: "code", children: [text("x")] },
+      { type: "link", href: "#", children: [text("链接")] },
+    ]);
+    expect(runs).toEqual([
+      { text: "x", cls: "md-codespan" },
+      { text: "链接", cls: "md-link" },
+    ]);
+  });
+});
+
+describe("parseNote - 记忆化", () => {
+  it("同一内容返回同一份解析结果，不重复解析", () => {
+    resetNoteCache();
+    const md = "## 标题\n\n正文 **加粗**";
+    expect(parseNote(md)).toBe(parseNote(md));
+    expect(noteCacheSize()).toBe(1);
+  });
+
+  it("不同内容各自入缓存", () => {
+    resetNoteCache();
+    parseNote("第一篇\n\n内容");
+    parseNote("第二篇\n\n内容");
+    expect(noteCacheSize()).toBe(2);
+  });
+
+  it("空内容命中缓存时仍返回空数组", () => {
+    resetNoteCache();
+    expect(parseNote("")).toEqual([]);
+    expect(parseNote("")).toEqual([]);
+    expect(noteCacheSize()).toBe(1);
+  });
+
+  it("超过上限后淘汰最旧条目", () => {
+    resetNoteCache();
+    for (let i = 0; i < NOTE_CACHE_MAX + 4; i++) parseNote(`第 ${i} 篇\n\n内容 ${i}`);
+    expect(noteCacheSize()).toBe(NOTE_CACHE_MAX);
   });
 });

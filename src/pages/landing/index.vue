@@ -420,19 +420,12 @@ const onMenuLink = (id: string) => {
 };
 </script>
 
-<style>
-@import "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap";
-</style>
-
 <style scoped>
+/* 不引入 Google Fonts @import：跨域阻塞请求、国内不可达，首屏会白屏并伴随字体回退闪烁。
+   字体栈直接回落到系统字体（PingFang / 微软雅黑 / system-ui）。 */
 .landing {
   min-height: 100vh;
-  font-family:
-    Manrope,
-    -apple-system,
-    "PingFang SC",
-    "Microsoft YaHei",
-    sans-serif;
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   color: #ffffff;
   background: #000000;
   -webkit-font-smoothing: antialiased;

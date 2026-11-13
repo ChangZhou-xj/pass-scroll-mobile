@@ -39,9 +39,16 @@ const theme = computed(() => THEMES[props.kind as Exclude<ContainerKind, "detail
 
 const isOpen = ref(false);
 
-// 内容切换（复习页/版本页按 index 复用实例）时复位为折叠，避免跨题残留展开态
+// 内容切换（复习页/版本页按 index 复用实例）时复位为折叠，避免跨题残留展开态。
+// 分两个浅 watch：getter 里返回新数组的话每次都会判定为「已变更」，白跑一次回调
 watch(
-  () => [props.blocks, props.title],
+  () => props.blocks,
+  () => {
+    isOpen.value = false;
+  },
+);
+watch(
+  () => props.title,
   () => {
     isOpen.value = false;
   },

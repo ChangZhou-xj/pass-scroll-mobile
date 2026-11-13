@@ -1,15 +1,16 @@
 <template>
   <view class="md-blocks">
     <template v-for="(block, index) in blocks" :key="index">
-      <!-- 标题：class 由 md-h + depth 拼接（md-h1~md-h6 均有定义） -->
-      <text v-if="block.type === 'heading'" selectable :class="'md-h' + block.depth">
+      <!-- 标题：class 由 md-h + depth 拼接（md-h1~md-h6 均有定义）。
+           外层用 view 而非 text：text 里不能嵌套组件（MdInline 是组件），H5 会告警且各端差异大 -->
+      <view v-if="block.type === 'heading'" :class="'md-h' + block.depth">
         <MdInline :nodes="block.children" />
-      </text>
+      </view>
 
       <!-- 段落 -->
-      <text v-else-if="block.type === 'paragraph'" selectable class="md-p">
+      <view v-else-if="block.type === 'paragraph'" class="md-p">
         <MdInline :nodes="block.children" />
-      </text>
+      </view>
 
       <!-- 列表：项目符号 / 编号 + 内容递归（支持嵌套列表） -->
       <view v-else-if="block.type === 'list'" class="md-list">
@@ -34,14 +35,14 @@
       <!-- 表格：flex 等宽网格（小程序无原生 table） -->
       <view v-else-if="block.type === 'table'" class="md-table">
         <view class="md-tr">
-          <text v-for="(cell, c) in block.header" :key="c" selectable class="md-th">
+          <view v-for="(cell, c) in block.header" :key="c" class="md-th">
             <MdInline :nodes="cell" />
-          </text>
+          </view>
         </view>
         <view v-for="(row, r) in block.rows" :key="r" class="md-tr">
-          <text v-for="(cell, c) in row" :key="c" selectable class="md-td">
+          <view v-for="(cell, c) in row" :key="c" class="md-td">
             <MdInline :nodes="cell" />
-          </text>
+          </view>
         </view>
       </view>
 

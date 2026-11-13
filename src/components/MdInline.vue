@@ -1,34 +1,22 @@
 <template>
+  <!-- 只保留一层 text + 若干兄弟 text：uni-app 不允许在 text 里嵌套组件（H5 会告警且各端渲染不一致），
+       行内样式通过 flattenInline 压平成 class，见 utils/markdown.ts -->
   <text class="md-inline">
-    <template v-for="(node, index) in nodes" :key="index">
-      <text v-if="node.type === 'text'" selectable>{{ node.text }}</text>
-      <text v-else-if="node.type === 'br'" selectable>{{ "\n" }}</text>
-      <text v-else-if="node.type === 'strong'" selectable class="md-strong">
-        <MdInline :nodes="node.children" />
-      </text>
-      <text v-else-if="node.type === 'em'" selectable class="md-em">
-        <MdInline :nodes="node.children" />
-      </text>
-      <text v-else-if="node.type === 'del'" selectable class="md-del">
-        <MdInline :nodes="node.children" />
-      </text>
-      <text v-else-if="node.type === 'code'" selectable class="md-codespan">
-        <MdInline :nodes="node.children" />
-      </text>
-      <text v-else-if="node.type === 'link'" selectable class="md-link">
-        <MdInline :nodes="node.children" />
-      </text>
-    </template>
+    <text v-for="(run, index) in runs" :key="index" selectable :class="run.cls">{{ run.text }}</text>
   </text>
 </template>
 
 <script setup lang="ts">
 import type { InlineNode } from "@/utils/markdown";
+import { computed } from "vue";
+import { flattenInline } from "@/utils/markdown";
 
 // 递归组件必须设置 name，模板中才能自引用
 defineOptions({ name: "MdInline" });
 
-defineProps<{ nodes: InlineNode[] }>();
+const props = defineProps<{ nodes: InlineNode[] }>();
+
+const runs = computed(() => flattenInline(props.nodes));
 </script>
 
 <style scoped>

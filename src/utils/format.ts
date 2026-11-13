@@ -25,8 +25,36 @@ export function truncateText(text: string, maxLength = 100): string {
   return text.slice(0, maxLength) + "...";
 }
 
+/**
+ * 摘要记忆化：列表里每张卡片都对整篇正文跑 14 条正则，一次刷新 50 张就是 700 次全文扫描，
+ * 而结果只显示两行。key 用正文本身（字符串按键值比较，重新拉取后内容相同也能命中）。
+ */
+export const PLAIN_TEXT_CACHE_MAX = 200;
+const plainTextCache = new Map<string, string>();
+
+export function plainTextCacheSize(): number {
+  return plainTextCache.size;
+}
+
+export function resetPlainTextCache(): void {
+  plainTextCache.clear();
+}
+
 /** markdown 转纯文本（列表摘要用）：剥离语法符号、去掉文首 H1（通常与标题重复） */
 export function plainText(markdown: string): string {
+  const cached = plainTextCache.get(markdown);
+  if (cached !== undefined) return cached;
+
+  const text = stripMarkdown(markdown);
+  if (plainTextCache.size >= PLAIN_TEXT_CACHE_MAX) {
+    const oldest = plainTextCache.keys().next().value;
+    if (oldest !== undefined) plainTextCache.delete(oldest);
+  }
+  plainTextCache.set(markdown, text);
+  return text;
+}
+
+function stripMarkdown(markdown: string): string {
   return markdown
     .replace(/^#\s+.*(\n|$)/, "")
     .replace(/```[\s\S]*?```/g, " [代码] ")

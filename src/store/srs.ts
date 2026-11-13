@@ -51,6 +51,14 @@ export const useSrsStore = defineStore("srs", () => {
   /** 主题聚焦：非空 = 只复习这个标签（系统性啃一块） */
   const activeTag = ref<string>("");
 
+  /**
+   * 一次性换手字段：tab 页保活后，跳转不能再靠 URL 传参（navigateBack/switchTab 均不带参）。
+   * 跳转方写入 → 复习页 onShow 读取并立刻清空 → 应用到本地 focusTag/palaceId。
+   * undefined = 无待消费的跳转意图；空串 = 显式重置（复现旧 reLaunch 的「清空筛选」语义）。
+   */
+  const pendingReviewTag = ref<string | undefined>(undefined);
+  const pendingReviewPalace = ref<string | undefined>(undefined);
+
   /** 卡片的主标签（第一个标签；没打标签 = "未分类"） */
   const primaryTag = (item: RecordItem) => item.tags[0] ?? "";
 
@@ -230,6 +238,8 @@ export const useSrsStore = defineStore("srs", () => {
     blocks,
     dueTags,
     activeTag,
+    pendingReviewTag,
+    pendingReviewPalace,
     current,
     currentBlock,
     totalToday,

@@ -18,6 +18,7 @@ import type { CurveConfig, Mastery, RecordForm, RecordItem, RecordQuery } from "
 import {
   createRecord,
   deleteRecord,
+  getStats,
   learnRecord as learnRecordRequest,
   listRecords,
   togglePinRecord,
@@ -27,12 +28,23 @@ import {
 
 const CACHE_KEY = "pass_scroll_records";
 
+/** 列表分页大小（后端 DTO 封顶 100） */
+const PAGE_SIZE = 20;
+
 export const useRecordStore = defineStore("record", () => {
   const records = ref<RecordItem[]>([]);
   const total = ref(0);
   const loading = ref(false);
   const keyword = ref("");
   const activeTag = ref("");
+  /** 已加载到第几页（fetchList 恒重置为 1） */
+  const page = ref(1);
+  const loadingMore = ref(false);
+  /** 已掌握总数（服务端口径）：分页后本地只有已加载页，计数必须来自 /records/stats */
+  const masteredTotal = ref<number | null>(null);
+
+  /** 是否还有下一页可加载 */
+  const hasMore = computed(() => records.value.length < total.value);
 
   const allTags = computed(() => {
     const tagSet = new Set<string>();
@@ -42,8 +54,16 @@ export const useRecordStore = defineStore("record", () => {
 
   const getRecordById = computed(() => (id: string) => records.value.find((r) => r.id === id));
 
+  /**
+   * 缓存回写走异步 uni.setStorage：列表含 50 篇正文，同步写盘会与首屏渲染抢同一帧。
+   * 缓存只用于冷启动/离线兜底，异步失败不影响内存数据（下次 fetchList 会再写一次）。
+   */
   function persist() {
-    uni.setStorageSync(CACHE_KEY, JSON.stringify(records.value));
+    try {
+      uni.setStorage({ key: CACHE_KEY, data: JSON.stringify(records.value) });
+    } catch (e) {
+      console.error("写入本地存储失败", e);
+    }
   }
 
   /** 启动时先读缓存渲染，再由 fetchList 拉最新数据覆盖 */
@@ -79,20 +99,60 @@ export const useRecordStore = defineStore("record", () => {
     }
   }
 
+  /** 列表请求序号：快速切换筛选/连点置顶时，先发的旧响应不得覆盖后发的新结果 */
+  let fetchSeq = 0;
+
+  function buildQuery(targetPage: number): RecordQuery {
+    const query: RecordQuery = { page: targetPage, pageSize: PAGE_SIZE };
+    if (keyword.value) query.keyword = keyword.value;
+    if (activeTag.value) query.tag = activeTag.value;
+    return query;
+  }
+
+  /** 重置到第 1 页（进入页面 / 下拉刷新 / 搜索 / 切标签 / 任何增删改后） */
   async function fetchList() {
+    const seq = ++fetchSeq;
     loading.value = true;
     try {
-      const query: RecordQuery = { page: 1, pageSize: 50 };
-      if (keyword.value) query.keyword = keyword.value;
-      if (activeTag.value) query.tag = activeTag.value;
-      const res = await listRecords(query);
+      const res = await listRecords(buildQuery(1));
+      if (seq !== fetchSeq) return; // 已有更新的请求在飞，丢弃本次结果
       records.value = res.list;
       total.value = res.total;
+      page.value = 1;
       persist();
     } catch {
       // request.ts 已统一 toast；失败时保留缓存数据（离线只读）
     } finally {
-      loading.value = false;
+      if (seq === fetchSeq) loading.value = false;
+    }
+  }
+
+  /** 加载下一页并追加（首页 onReachBottom）；期间发生 fetchList 则丢弃结果 */
+  async function loadMore() {
+    if (loading.value || loadingMore.value || !hasMore.value) return;
+    const seq = fetchSeq;
+    loadingMore.value = true;
+    try {
+      const res = await listRecords(buildQuery(page.value + 1));
+      if (seq !== fetchSeq) return; // 期间发生了筛选/重置，过期分页直接丢弃
+      records.value = [...records.value, ...res.list];
+      total.value = res.total;
+      page.value += 1;
+      persist();
+    } catch {
+      // request.ts 已统一 toast；失败保留当前列表，下次触底重试
+    } finally {
+      loadingMore.value = false;
+    }
+  }
+
+  /** 服务端统计（首页 hero 的「已掌握 x/y」口径）；失败保留上次值 */
+  async function fetchStats() {
+    try {
+      const stats = await getStats();
+      masteredTotal.value = stats.mastery.mastered;
+    } catch {
+      // request.ts 已统一 toast
     }
   }
 
@@ -138,10 +198,16 @@ export const useRecordStore = defineStore("record", () => {
     loading,
     keyword,
     activeTag,
+    page,
+    loadingMore,
+    hasMore,
+    masteredTotal,
     allTags,
     getRecordById,
     init,
     fetchList,
+    loadMore,
+    fetchStats,
     addRecord,
     editRecord,
     removeRecord,

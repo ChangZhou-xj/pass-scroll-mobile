@@ -178,6 +178,7 @@ import { onLoad, onShow } from "@dcloudio/uni-app";
 import { useSrsStore } from "@/store/srs";
 import { useUserStore } from "@/store/modules/user";
 import { T, masteryStyle } from "@/theme/tokens";
+import { goToTab, syncActiveTab } from "@/utils/navigation";
 import { parseNote } from "@/utils/markdown";
 import { formatDueLabel, formatInterval, schedule } from "@/utils/srs";
 
@@ -322,8 +323,9 @@ const goDetail = () => {
 };
 
 const goCurve = () => uni.navigateTo({ url: "/pages/curve/index" });
-const goPalace = () => uni.reLaunch({ url: "/pages/palace/index" });
-const goHome = () => uni.reLaunch({ url: "/pages/index/index" });
+// tab 页保活：宫殿页用 navigateTo 推入（返回即回复习页），回首页走栈内保活返回
+const goPalace = () => uni.navigateTo({ url: "/pages/palace/index" });
+const goHome = () => goToTab("pages/index/index");
 
 /** 主题切换器：换主题 = 重新拉该标签的队列（宫殿巡游与主题聚焦互不影响） */
 const pickTag = async (name: string) => {
@@ -334,7 +336,8 @@ const pickTag = async (name: string) => {
   answerRevealed.value = false;
 };
 
-/** 宫殿页点「开始巡游」会带 ?palace=<id>；首页点主题块会带 ?tag=<name> */
+/** 宫殿页点「开始巡游」带 palace=<id>；首页点主题块带 tag=<name>。
+ * tab 页保活后 URL 只在首次 onLoad 生效，后续跳转走 srs store 的一次性换手字段（onShow 消费） */
 onLoad((options) => {
   const query = (options ?? {}) as { palace?: string; tag?: string };
   palaceId.value = query.palace ?? "";
@@ -353,6 +356,14 @@ onShow(async () => {
     uni.reLaunch({ url: "/pages/login/index" });
     return;
   }
+  syncActiveTab();
+  // 消费一次性换手：带参跳转（首页主题 chip / 宫殿巡游）在此落到本地筛选
+  const pendingTag = srsStore.pendingReviewTag;
+  const pendingPalace = srsStore.pendingReviewPalace;
+  srsStore.pendingReviewTag = undefined;
+  srsStore.pendingReviewPalace = undefined;
+  if (pendingTag !== undefined) focusTag.value = pendingTag;
+  if (pendingPalace !== undefined) palaceId.value = pendingPalace;
   await Promise.all([
     srsStore.fetchPalaces(),
     srsStore.fetchDueTags(),

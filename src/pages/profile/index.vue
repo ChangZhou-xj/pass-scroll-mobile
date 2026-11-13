@@ -140,6 +140,7 @@ import { getStats } from "@/api/record";
 import { useRecordStore } from "@/store/record";
 import { useSrsStore } from "@/store/srs";
 import { useUserStore } from "@/store/modules/user";
+import { syncActiveTab } from "@/utils/navigation";
 import { T } from "@/theme/tokens";
 
 // 本项目 pinia setup store 的 state/computed 在外部类型层未解包（见 user.ts 基线注释），
@@ -255,6 +256,7 @@ onShow(() => {
     uni.reLaunch({ url: "/pages/login/index" });
     return;
   }
+  syncActiveTab();
   loadStats();
 });
 </script>

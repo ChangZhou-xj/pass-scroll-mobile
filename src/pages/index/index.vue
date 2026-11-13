@@ -49,17 +49,14 @@
     <view
       class="mt-32rpx h-80rpx flex items-center rounded-16rpx border-2rpx border-solid border-[#E3E3E6] bg-white px-28rpx">
       <input
-        v-model="recordStore.keyword"
+        v-model="searchInput"
         class="h-72rpx flex-1 text-28rpx text-[#0D0D0D]"
         type="text"
         confirm-type="search"
         placeholder="搜索标题或内容"
         placeholder-style="color: #67676C;"
         @confirm="handleSearch" />
-      <view
-        v-if="recordStore.keyword"
-        class="ml-12rpx flex h-48rpx w-48rpx items-center justify-center"
-        @click="clearKeyword">
+      <view v-if="searchInput" class="ml-12rpx flex h-48rpx w-48rpx items-center justify-center" @click="clearKeyword">
         <text class="text-28rpx leading-none text-[#67676C]">✕</text>
       </view>
     </view>
@@ -83,9 +80,14 @@
       </view>
     </scroll-view>
 
-    <!-- 记录列表 -->
+    <!-- 记录列表：窗口化渲染（utils/render-window.ts），窗口外用等高占位顶住总文档高度，滚动不跳。
+         record-card 包一层页面自有节点：小程序端页面级 selectorQuery 查不到子组件内部节点 -->
     <view class="mt-24rpx">
-      <RecordCard v-for="item in recordStore.records" :key="item.id" :record="item" @click="goDetail" />
+      <view v-if="topPad > 0" :style="{ height: topPad + 'px' }" />
+      <view v-for="item in visibleRecords" :key="item.id" class="record-card pb-24rpx">
+        <RecordCard :record="item" @click="goDetail" />
+      </view>
+      <view v-if="bottomPad > 0" :style="{ height: bottomPad + 'px' }" />
     </view>
 
     <!-- 空态 -->
@@ -93,9 +95,11 @@
       <text class="text-28rpx text-[#67676C]">{{ emptyText }}</text>
     </view>
 
-    <!-- 底部统计 -->
-    <view v-if="recordStore.records.length > 0" class="flex justify-center pt-8rpx">
-      <text class="text-22rpx text-[#67676C]">共 {{ recordStore.total }} 条</text>
+    <!-- 底部：分页状态（上滑触底自动加载下一页） -->
+    <view v-if="recordStore.records.length > 0" class="flex justify-center pt-8rpx pb-8rpx">
+      <text class="text-22rpx text-[#67676C]">
+        {{ recordStore.loadingMore ? "加载中…" : recordStore.hasMore ? "上滑加载更多" : `共 ${recordStore.total} 条` }}
+      </text>
     </view>
 
     <!-- 浮动新建按钮 -->
@@ -112,11 +116,13 @@
 
 <script setup lang="ts">
 import type { RecordItem } from "@/types/record";
-import { onPullDownRefresh, onShow } from "@dcloudio/uni-app";
+import { onPageScroll, onPullDownRefresh, onReachBottom, onShow } from "@dcloudio/uni-app";
 import { useRecordStore } from "@/store/record";
 import { useSrsStore } from "@/store/srs";
 import { useUserStore } from "@/store/modules/user";
 import { T } from "@/theme/tokens";
+import { goToTab, syncActiveTab } from "@/utils/navigation";
+import { computeWindow, prefixSum } from "@/utils/render-window";
 import { getStatusBarPx } from "@/utils/system";
 
 // 本页无 NavBar，需自行避让状态栏
@@ -126,14 +132,29 @@ const statusBarPx = getStatusBarPx();
 // 经 unknown 转换为运行时实际的解包形态，页面内按运行时结构消费。
 type RecordStoreProxy = Omit<
   ReturnType<typeof useRecordStore>,
-  "records" | "total" | "loading" | "keyword" | "activeTag" | "allTags"
+  | "records"
+  | "total"
+  | "loading"
+  | "keyword"
+  | "activeTag"
+  | "allTags"
+  | "page"
+  | "loadingMore"
+  | "hasMore"
+  | "masteredTotal"
 > & {
   records: RecordItem[];
   total: number;
   loading: boolean;
   keyword: string;
   activeTag: string;
+  page: number;
+  loadingMore: boolean;
+  hasMore: boolean;
+  masteredTotal: number | null;
   allTags: string[];
+  loadMore: () => Promise<void>;
+  fetchStats: () => Promise<void>;
 };
 
 const userStore = useUserStore();
@@ -143,9 +164,13 @@ const srsStore = useSrsStore() as unknown as {
   dueCount: number;
   freshCount: number;
   dueTags: import("@/types/record").DueTagStat[];
+  pendingReviewTag: string | undefined;
   fetchDue: (opts?: { palaceId?: string; tag?: string; limit?: number }) => Promise<void>;
   fetchDueTags: () => Promise<void>;
 };
+
+/** 搜索框绑本地值：直接 v-model 到 store 会让每次按键都写 pinia state、触发全页重渲染 */
+const searchInput = ref(recordStore.keyword);
 
 const dueTotal = computed(() => srsStore.dueCount + srsStore.freshCount);
 /** 今日有卡要复习的标签（后端已按待复习数排好序） */
@@ -163,13 +188,97 @@ const emptyText = computed(() =>
   Boolean(recordStore.keyword) || Boolean(recordStore.activeTag) ? "没有匹配的记录" : "还没有记录，点右下角 + 写第一条",
 );
 
-const masteredCount = computed(() => recordStore.records.filter((r) => r.mastery === "MASTERED").length);
+/** hero 的「已掌握 x/y」用服务端口径（分页后本地只有已加载页，本地计数会偏小）；统计未到时退回本地口径 */
+const masteredCount = computed(
+  () => recordStore.masteredTotal ?? recordStore.records.filter((r) => r.mastery === "MASTERED").length,
+);
+
+/* ── 长列表虚拟化：实测高度 + 渲染窗口（纯函数见 utils/render-window.ts） ── */
+
+/** 未实测卡片的兜底高度（px）：宁可偏大（多渲染）也不偏小（露白），首屏全量渲染后会全部实测 */
+const FALLBACK_CARD_HEIGHT = 160;
+/** 视口上下各多渲染的余量（px），防快速滑动露白 */
+const RENDER_BUFFER = 600;
+
+/** 每张卡实测高度，按 id 缓存（卡片无图片、标签静态，高度稳定） */
+const heightsById = new Map<string, number>();
+/** 高度表版本号：measureCards 写入后 bump，驱动 prefix 重算 */
+const heightVersion = ref(0);
+/** 当前渲染窗口 [start, end)，与 Array.slice 对齐 */
+const win = ref({ start: 0, end: 0 });
+let lastScrollTop = 0;
+let viewHeight = 0;
+
+const prefix = computed(() => {
+  void heightVersion.value;
+  void recordStore.records;
+  return prefixSum(recordStore.records.map((r) => heightsById.get(r.id) ?? FALLBACK_CARD_HEIGHT));
+});
+
+const visibleRecords = computed(() => recordStore.records.slice(win.value.start, win.value.end));
+const topPad = computed(() => prefix.value[win.value.start] ?? 0);
+const bottomPad = computed(() => (prefix.value[recordStore.records.length] ?? 0) - (prefix.value[win.value.end] ?? 0));
+
+function ensureViewHeight(): number {
+  if (!viewHeight) viewHeight = uni.getSystemInfoSync().windowHeight || 667;
+  return viewHeight;
+}
+
+/** 窗口变化才写 ref：滚动路径只有算术 + 一次比较，无渲染 */
+function updateWindow(scrollTop: number): void {
+  const total = recordStore.records.length;
+  if (!total) return;
+  const next = computeWindow(prefix.value, scrollTop, ensureViewHeight(), RENDER_BUFFER, total);
+  if (next.start !== win.value.start || next.end !== win.value.end) win.value = next;
+}
+
+/** 批量实测当前渲染出的卡片高度（一次 selectorQuery，按 DOM 顺序对齐渲染切片） */
+function measureCards(): void {
+  nextTick(() => {
+    uni
+      .createSelectorQuery()
+      .selectAll(".record-card")
+      .boundingClientRect((rects) => {
+        const list = (rects ?? []) as { height: number }[];
+        const slice = recordStore.records.slice(win.value.start, win.value.end);
+        let changed = false;
+        list.forEach((rect, index) => {
+          const record = slice[index];
+          if (!record || !rect?.height) return;
+          if (heightsById.get(record.id) !== rect.height) {
+            heightsById.set(record.id, rect.height);
+            changed = true;
+          }
+        });
+        if (changed) heightVersion.value++;
+        // 无论高度是否有更新都重算窗口：列表刚变化时用估算高度缩窗可能露白，实测后再缩才可靠
+        updateWindow(lastScrollTop);
+      })
+      .exec();
+  });
+}
+
+// 列表变化：重置到第 1 页说明数据整体换血（筛选/刷新/增删改），高度表作废；
+// 追加页保持窗口起点、把终点扩到列表末尾让新卡片渲染出来参与实测。
+// 这里不缩窗——收缩统一等 measureCards 实测后做，避免估算高度导致露白
+watch(
+  () => [recordStore.records, recordStore.page] as const,
+  () => {
+    if (recordStore.page === 1) heightsById.clear();
+    win.value = { start: Math.min(win.value.start, recordStore.records.length), end: recordStore.records.length };
+    measureCards();
+  },
+  { flush: "post" },
+);
 
 const handleSearch = () => {
+  const keyword = searchInput.value.trim();
+  if (keyword !== recordStore.keyword) recordStore.keyword = keyword;
   recordStore.fetchList();
 };
 
 const clearKeyword = () => {
+  searchInput.value = "";
   recordStore.keyword = "";
   recordStore.fetchList();
 };
@@ -198,13 +307,16 @@ const goCreate = () => {
   uni.navigateTo({ url: "/pages/editor/index" });
 };
 
+// 进入复习页：显式清空主题聚焦（复现旧 reLaunch 的重置语义），带参走 store 换手
 const goReview = () => {
-  uni.reLaunch({ url: "/pages/review/index" });
+  srsStore.pendingReviewTag = "";
+  goToTab("pages/review/index");
 };
 
 /** 点主题 chip 直接进"只啃这一个标签"的复习（学习曲线按标签分块） */
 const goReviewTag = (tag: string) => {
-  uni.reLaunch({ url: `/pages/review/index?tag=${encodeURIComponent(tag)}` });
+  srsStore.pendingReviewTag = tag;
+  goToTab("pages/review/index");
 };
 
 onShow(() => {
@@ -212,7 +324,11 @@ onShow(() => {
     uni.reLaunch({ url: "/pages/login/index" });
     return;
   }
+  syncActiveTab();
+  // 别处可能改过筛选条件（如宫殿页进入前清空 keyword），回到首页时把输入框对齐
+  searchInput.value = recordStore.keyword;
   recordStore.fetchList();
+  recordStore.fetchStats();
   srsStore.fetchDue({ limit: 1 });
   srsStore.fetchDueTags();
 });
@@ -220,5 +336,16 @@ onShow(() => {
 onPullDownRefresh(async () => {
   await Promise.all([recordStore.fetchList(), srsStore.fetchDue({ limit: 1 }), srsStore.fetchDueTags()]);
   uni.stopPullDownRefresh();
+});
+
+/** 上滑到底加载下一页 */
+onReachBottom(() => {
+  recordStore.loadMore();
+});
+
+/** 滚动路径只做算术与窗口比较，不查 DOM、不落库 */
+onPageScroll((e) => {
+  lastScrollTop = e.scrollTop;
+  updateWindow(e.scrollTop);
 });
 </script>

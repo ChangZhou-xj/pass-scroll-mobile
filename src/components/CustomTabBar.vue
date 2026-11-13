@@ -17,6 +17,7 @@
 
 <script setup lang="ts">
 import { T } from "@/theme/tokens";
+import { activeTabPath, goToTab } from "@/utils/navigation";
 
 const items = [
   { path: "pages/index/index", icon: "home", text: "首页" },
@@ -24,13 +25,13 @@ const items = [
   { path: "pages/profile/index", icon: "user", text: "我的" },
 ];
 
-const pages = getCurrentPages();
-const activePath = pages.length ? pages[pages.length - 1].route : "";
+// tab 页保活后本组件常驻不重建，高亮态必须响应式（tab 页 onShow 会同步它）
+const activePath = activeTabPath;
 
-const colorFor = (path: string) => (activePath === path ? T.ink : T.secondaryText);
+const colorFor = (path: string) => (activePath.value === path ? T.ink : T.secondaryText);
 
 const go = (path: string) => {
-  if (activePath === path) return;
-  uni.reLaunch({ url: `/${path}` });
+  if (activePath.value === path) return;
+  goToTab(path);
 };
 </script>

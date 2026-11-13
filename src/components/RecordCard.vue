@@ -1,12 +1,13 @@
 <template>
-  <view class="mb-24rpx rounded-48rpx border-2rpx border-solid border-[#E3E3E6] bg-white p-40rpx" @click="handleClick">
+  <!-- 卡间距由首页的包裹节点承担（pb-24rpx）：间距要计入虚拟列表的实测高度，margin 不计入且会折叠 -->
+  <view class="rounded-48rpx border-2rpx border-solid border-[#E3E3E6] bg-white p-40rpx" @click="handleClick">
     <view class="flex items-center">
       <text v-if="record.isPinned" class="mr-8rpx text-32rpx">📌</text>
       <text class="truncate text-32rpx font-semibold tracking-[-1rpx] text-[#0D0D0D]">{{ record.title }}</text>
       <text
         v-if="record.mastery !== 'NONE'"
         class="ml-12rpx shrink-0 rounded-full border-2rpx border-solid px-16rpx py-2rpx text-20rpx"
-        :style="masteryStyle(record.mastery)">
+        :style="masteryStyleObj">
         {{ masteryText }}
       </text>
     </view>
@@ -38,6 +39,9 @@ const emit = defineEmits<{
 }>();
 
 const summary = computed(() => plainText(props.record.content));
+
+/** 模板里直接调 masteryStyle() 会每次渲染新建对象，50 张卡就是 50 个新对象参与 diff */
+const masteryStyleObj = computed(() => masteryStyle(props.record.mastery));
 
 const masteryText = computed(() => (props.record.mastery === "MASTERED" ? "已掌握" : "复习中"));
 

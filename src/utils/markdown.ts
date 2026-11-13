@@ -92,6 +92,50 @@ function inlineToNodes(tokens?: MdToken[]): InlineNode[] {
   });
 }
 
+/** 压平后的行内片段：同一样式的连续文本合成一段 */
+export interface InlineRun {
+  text: string;
+  cls: string;
+}
+
+const INLINE_CLASS: Record<string, string> = {
+  strong: "md-strong",
+  em: "md-em",
+  del: "md-del",
+  code: "md-codespan",
+  link: "md-link",
+};
+
+function pushRun(runs: InlineRun[], text: string, cls: string, merge = true): void {
+  if (!text) return;
+  const last = runs[runs.length - 1];
+  // 换行前后都不合并，否则 "A" + "\n" + "B" 会粘成一段，渲染时的换行位置可能与原逐节点渲染不同
+  if (merge && last && last.cls === cls && last.text !== "\n") last.text += text;
+  else runs.push({ text, cls });
+}
+
+/**
+ * 把行内树压平成「一层 text + 若干兄弟 text」。
+ * 原因：uni-app 的 <text> 里嵌套组件会在 H5 告警（Do not nest other components…）且各端渲染不一致，
+ * 而递归渲染 MdInline 必然产生「text 里套组件」。压平后只剩 text 套 text，样式用 class 表达。
+ */
+export function flattenInline(nodes: InlineNode[], inherited: string[] = [], runs: InlineRun[] = []): InlineRun[] {
+  for (const node of nodes) {
+    if (node.type === "text") {
+      pushRun(runs, node.text, inherited.join(" "));
+      continue;
+    }
+    if (node.type === "br") {
+      // 换行单独成段，不并入相邻文本，保持与原先逐节点渲染一致的换行位置
+      pushRun(runs, "\n", inherited.join(" "), false);
+      continue;
+    }
+    const cls = INLINE_CLASS[node.type];
+    flattenInline(node.children, cls ? [...inherited, cls] : inherited, runs);
+  }
+  return runs;
+}
+
 function blockOf(t: MdToken): BlockNode[] {
   switch (t.type) {
     case "heading":
@@ -152,8 +196,37 @@ export function mdToBlocks(md: string): BlockNode[] {
   return blocksOf(marked.lexer(md, { gfm: true, breaks: false }) as unknown as MdToken[]);
 }
 
+/**
+ * 解析结果记忆化：详情页/编辑页/复习页/版本页都在 computed 里调 parseNote，
+ * 任何一次父级重渲染（置顶、改掌握度、返回页面）都会整篇重解析。
+ * key 用原文：字符串按键值比较，重新拉取后内容相同仍能命中；只保留最近几篇，避免常驻大对象。
+ */
+export const NOTE_CACHE_MAX = 8;
+const noteCache = new Map<string, NoteSegment[]>();
+
+export function noteCacheSize(): number {
+  return noteCache.size;
+}
+
+export function resetNoteCache(): void {
+  noteCache.clear();
+}
+
 /** 把笔记内容按 ::: 容器围栏切分为可渲染分段；不支持容器嵌套（笔记中没有） */
 export function parseNote(content: string): NoteSegment[] {
+  const cached = noteCache.get(content);
+  if (cached) return cached;
+
+  const segments = parseNoteUncached(content);
+  if (noteCache.size >= NOTE_CACHE_MAX) {
+    const oldest = noteCache.keys().next().value;
+    if (oldest !== undefined) noteCache.delete(oldest);
+  }
+  noteCache.set(content, segments);
+  return segments;
+}
+
+function parseNoteUncached(content: string): NoteSegment[] {
   const lines = content.split("\n");
   const segments: NoteSegment[] = [];
   let buffer: string[] = [];
