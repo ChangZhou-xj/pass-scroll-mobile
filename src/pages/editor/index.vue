@@ -34,13 +34,13 @@
         placeholder="标题"
         placeholder-style="color: #67676C;" />
 
-      <!-- 内容 -->
+      <!-- 内容：浅灰卡片 + 等宽字体 + 大行距，markdown 原文更易读 -->
       <textarea
         v-model="content"
-        class="mt-24rpx min-h-400rpx w-full text-28rpx leading-7 text-[#0D0D0D]"
+        class="mt-24rpx min-h-400rpx w-full rounded-24rpx bg-[#F4F5F7] p-24rpx font-mono text-26rpx leading-[1.9] text-[#0D0D0D]"
         auto-height
         placeholder="支持 markdown 语法…"
-        placeholder-style="color: #67676C;" />
+        placeholder-style="color: #9A9AA0;" />
 
       <!-- 标签区 -->
       <view class="mt-24rpx flex flex-wrap border-0 border-t-2rpx border-solid border-[#E3E3E6] pt-24rpx">
@@ -76,9 +76,10 @@
       </view>
       <view class="my-24rpx h-1rpx bg-[#E3E3E6]" />
       <template v-if="content.trim()">
+        <!-- 原生组件渲染，全部文字 selectable 可长按/拖选复制 -->
         <view v-for="(seg, index) in previewSegments" :key="index">
-          <rich-text v-if="seg.type === 'html'" :nodes="seg.html" />
-          <MdContainer v-else :kind="seg.kind" :title="seg.title" :html="seg.html" />
+          <MdBlocks v-if="seg.type === 'blocks'" :blocks="seg.blocks" />
+          <MdContainer v-else :kind="seg.kind" :title="seg.title" :blocks="seg.blocks" />
         </view>
       </template>
       <view v-else class="flex-center py-60rpx">

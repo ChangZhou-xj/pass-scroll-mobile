@@ -47,6 +47,8 @@ module.exports = {
         ignoreUnits: ["rpx"],
       },
     ],
+    // 项目样式使用小程序 rpx 单位（同 unit-no-unknown 的放行），该规则会误报 rpx 值，关闭
+    "declaration-property-value-no-unknown": null,
     "property-no-unknown": [
       true,
       {

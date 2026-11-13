@@ -1,20 +1,39 @@
 /**
- * markdown 渲染管线——把笔记的 markdown 原文转成 uni-app rich-text 能吃的 HTML
+ * markdown 渲染管线——把笔记原文解析为结构化节点树，由 MdBlocks/MdInline 原生组件递归渲染
  *
- * 三段流水线：
- *   1. parseNote 按 ::: 围栏把原文切成"普通段"与"容器段"（tip/warning/danger/details）
- *   2. 每段经 marked.parse 转 HTML
- *   3. injectStyles 给标签注入内联样式（rich-text 组件只认 inline style，不认 class/外部 CSS），
- *      再用 adaptUnits 把 style 属性里的 rpx 换算成 px（仅 H5 需要）
+ * 设计要点：
+ *   1. parseNote 按 ::: 围栏把原文切成"普通段"与"容器段"（tip/warning/danger/details），
+ *      每段经 marked.lexer 解析为 token，再归一化为 BlockNode/InlineNode 节点树（纯函数，可单测）
+ *   2. 渲染全部走原生组件：所有文字都是 <text selectable>，小程序/H5 均可原生长按/拖选复制，
+ *      不再依赖 rich-text（仅裸 HTML 兜底）；样式走组件 class，跨端一致
  * 消费方：详情页/复习页/版本预览页/编辑器预览（segments → v-for 渲染）。
  */
 import { marked } from "marked";
 
 export type ContainerKind = "tip" | "warning" | "danger" | "details";
 
+/** 行内节点：MdInline 递归渲染为嵌套 selectable text */
+export type InlineNode =
+  | { type: "text"; text: string }
+  | { type: "strong" | "em" | "del" | "code"; children: InlineNode[] }
+  | { type: "link"; href: string; children: InlineNode[] }
+  | { type: "br" };
+
+/** 块级节点：MdBlocks 递归渲染 */
+export type BlockNode =
+  | { type: "heading"; depth: number; children: InlineNode[] }
+  | { type: "paragraph"; children: InlineNode[] }
+  | { type: "list"; ordered: boolean; items: BlockNode[][] }
+  | { type: "blockquote"; blocks: BlockNode[] }
+  | { type: "code"; lang: string; text: string }
+  | { type: "table"; aligns: ("left" | "center" | "right" | null)[]; header: InlineNode[][]; rows: InlineNode[][][] }
+  | { type: "image"; href: string; title: string }
+  | { type: "hr" }
+  | { type: "html"; html: string };
+
 export type NoteSegment =
-  | { type: "html"; html: string }
-  | { type: "container"; kind: ContainerKind; title: string; html: string };
+  | { type: "blocks"; blocks: BlockNode[] }
+  | { type: "container"; kind: ContainerKind; title: string; blocks: BlockNode[] };
 
 const CONTAINER_DEFAULT_TITLES: Record<ContainerKind, string> = {
   tip: "提示",
@@ -23,87 +42,131 @@ const CONTAINER_DEFAULT_TITLES: Record<ContainerKind, string> = {
   details: "答案",
 };
 
-/** 标签 → 内联样式（rich-text 只认内联样式，不认 class/外部 CSS） */
-const TAG_STYLES: Record<string, string> = {
-  h1: "font-size:40rpx;font-weight:800;letter-spacing:-1px;margin:32rpx 0 16rpx;color:#0D0D0D;",
-  h2: "font-size:36rpx;font-weight:700;letter-spacing:-1px;margin:32rpx 0 16rpx;color:#0D0D0D;border-bottom:1px solid #E3E3E6;padding-bottom:8rpx;",
-  h3: "font-size:32rpx;font-weight:700;margin:24rpx 0 12rpx;color:#0D0D0D;",
-  h4: "font-size:30rpx;font-weight:600;margin:20rpx 0 10rpx;color:#0D0D0D;",
-  h5: "font-size:28rpx;font-weight:600;margin:16rpx 0 8rpx;color:#0D0D0D;",
-  h6: "font-size:26rpx;font-weight:600;margin:16rpx 0 8rpx;color:#0D0D0D;",
-  p: "margin:12rpx 0;line-height:1.8;color:#0D0D0D;font-size:28rpx;",
-  blockquote: "border-left:6rpx solid #0D0D0D;margin:16rpx 0;padding:8rpx 20rpx;color:#0D0D0D;background:#F4F5F7;",
-  ul: "padding-left:40rpx;margin:12rpx 0;",
-  ol: "padding-left:40rpx;margin:12rpx 0;",
-  li: "margin:6rpx 0;line-height:1.8;font-size:28rpx;color:#0D0D0D;",
-  a: "color:#0D0D0D;text-decoration:underline;",
-  strong: "font-weight:700;",
-  em: "font-style:italic;",
-  hr: "border:none;border-top:1px solid #E3E3E6;margin:32rpx 0;",
-  table: "border-collapse:collapse;width:100%;margin:16rpx 0;font-size:26rpx;",
-  th: "border:1px solid #E3E3E6;background:#F4F5F7;padding:12rpx 16rpx;font-weight:600;color:#0D0D0D;",
-  td: "border:1px solid #E3E3E6;padding:12rpx 16rpx;color:#0D0D0D;",
-  img: "max-width:100%;border-radius:16rpx;",
-  del: "text-decoration:line-through;color:#0D0D0D;",
-};
+/** marked token 的最小结构描述（只声明用到的字段，避免依赖版本细节） */
+interface MdToken {
+  type: string;
+  raw?: string;
+  depth?: number;
+  ordered?: boolean;
+  lang?: string;
+  text?: string;
+  href?: string;
+  title?: string;
+  align?: ("left" | "center" | "right" | null)[];
+  tokens?: MdToken[];
+  items?: MdToken[];
+  header?: MdToken[];
+  rows?: MdToken[][];
+}
 
-const PRE_STYLE =
-  "background:#16181D;color:#e6e6e6;border-radius:16rpx;padding:24rpx;margin:16rpx 0;overflow-x:auto;font-size:24rpx;line-height:1.6;";
-const CODE_IN_PRE_STYLE =
-  "font-family:Consolas,Menlo,monospace;background:transparent;color:#e6e6e6;padding:0;font-size:24rpx;";
-const CODE_INLINE_STYLE =
-  "font-family:Consolas,Menlo,monospace;background:#F4F5F7;color:#0D0D0D;border-radius:8rpx;padding:2rpx 8rpx;font-size:26rpx;";
+function inlineToNode(t: MdToken): InlineNode | null {
+  switch (t.type) {
+    case "text":
+    case "escape":
+      return { type: "text", text: t.text ?? "" };
+    case "strong":
+    case "em":
+    case "del":
+      return { type: t.type, children: inlineToNodes(t.tokens) };
+    case "codespan":
+      return { type: "code", children: [{ type: "text", text: t.text ?? "" }] };
+    case "link":
+      return { type: "link", href: t.href ?? "", children: inlineToNodes(t.tokens) };
+    // 行内图片（嵌在加粗/链接等内部）退化为替代文本；段落级图片由 blockOf 抽为独立 image 块
+    case "image":
+      return { type: "text", text: t.text ?? "" };
+    case "br":
+      return { type: "br" };
+    case "html":
+      return { type: "text", text: t.raw ?? "" };
+    default:
+      return null;
+  }
+}
 
-/** H5 标记：rich-text 字符串 nodes 的内联样式不做 rpx 转换（浏览器不识别 rpx），
- * 需在 H5 端把 rpx 按 750 设计稿换算为 px；小程序原生支持 rpx，保持原样。
- * 条件编译只写赋值语句（不写 return），避免 eslint no-unreachable。 */
-let isH5 = false;
-// #ifdef H5
-isH5 = true;
-// #endif
-
-/** H5 端仅在 style 属性值内把 rpx 换算为 px；
- * 不做整段替换，避免改写正文文本、代码块内容与 URL 中的 rpx。其余平台原样返回 */
-function adaptUnits(html: string): string {
-  if (!isH5) return html;
-  return html.replace(/style="([^"]*)"/g, (match, css: string) => {
-    return `style="${css.replace(/(\d+(?:\.\d+)?)rpx/g, (_m, value) => `${uni.upx2px(Number(value))}px`)}"`;
+function inlineToNodes(tokens?: MdToken[]): InlineNode[] {
+  return (tokens ?? []).flatMap((t) => {
+    if (t.type === "text" && t.tokens) return inlineToNodes(t.tokens);
+    const node = inlineToNode(t);
+    return node ? [node] : [];
   });
 }
 
-/** 给 HTML 标签注入内联样式 */
-function injectStyles(html: string): string {
-  let out = html;
-  // 先处理 pre><code（深色代码块内的 code 不能用行内浅色样式）
-  out = out.replace(/<pre><code([^>]*)>/g, `<pre style="${PRE_STYLE}"><code style="${CODE_IN_PRE_STYLE}"$1>`);
-  out = out.replace(/<pre(?![^>]*style=)([^>]*)>/g, `<pre style="${PRE_STYLE}"$1>`);
-  out = out.replace(/<code(?![^>]*style=)([^>]*)>/g, `<code style="${CODE_INLINE_STYLE}"$1>`);
-  for (const [tag, style] of Object.entries(TAG_STYLES)) {
-    out = out.replace(new RegExp(`<${tag}(?![\\w-])(?![^>]*style=)([^>]*)>`, "g"), `<${tag} style="${style}"$1>`);
+function blockOf(t: MdToken): BlockNode[] {
+  switch (t.type) {
+    case "heading":
+      return [{ type: "heading", depth: t.depth ?? 1, children: inlineToNodes(t.tokens) }];
+    case "paragraph":
+    case "text": {
+      // 紧凑列表项的行内内容也是 text 型块；段落中的图片抽为独立 image 块（text 内无法嵌 image）
+      const children: InlineNode[] = [];
+      const blocks: BlockNode[] = [];
+      for (const inline of t.tokens ?? []) {
+        if (inline.type === "image") {
+          blocks.push({ type: "image", href: inline.href ?? "", title: inline.title ?? "" });
+          continue;
+        }
+        children.push(...inlineToNodes([inline]));
+      }
+      if (children.length) blocks.unshift({ type: "paragraph", children });
+      return blocks;
+    }
+    case "list":
+      return [
+        {
+          type: "list",
+          ordered: Boolean(t.ordered),
+          items: (t.items ?? []).map((item) => blocksOf(item.tokens)),
+        },
+      ];
+    case "blockquote":
+      return [{ type: "blockquote", blocks: blocksOf(t.tokens) }];
+    case "code":
+      return [{ type: "code", lang: t.lang ?? "", text: (t.text ?? "").replace(/\n$/, "") }];
+    case "table":
+      return [
+        {
+          type: "table",
+          aligns: t.align ?? [],
+          header: (t.header ?? []).map((cell) => inlineToNodes(cell.tokens)),
+          rows: (t.rows ?? []).map((row) => row.map((cell) => inlineToNodes(cell.tokens))),
+        },
+      ];
+    case "hr":
+      return [{ type: "hr" }];
+    case "html":
+      return [{ type: "html", html: t.raw ?? "" }];
+    case "space":
+      return [];
+    default:
+      return [];
   }
-  return adaptUnits(out);
 }
 
-function renderMarkdown(text: string): string {
-  const html = marked.parse(text, { gfm: true, breaks: false }) as string;
-  return injectStyles(html);
+function blocksOf(tokens?: MdToken[]): BlockNode[] {
+  return (tokens ?? []).flatMap(blockOf);
+}
+
+/** 把一段 markdown 解析为块级节点树（纯函数） */
+export function mdToBlocks(md: string): BlockNode[] {
+  return blocksOf(marked.lexer(md, { gfm: true, breaks: false }) as unknown as MdToken[]);
 }
 
 /** 把笔记内容按 ::: 容器围栏切分为可渲染分段；不支持容器嵌套（笔记中没有） */
 export function parseNote(content: string): NoteSegment[] {
   const lines = content.split("\n");
   const segments: NoteSegment[] = [];
-  let mdBuffer: string[] = [];
+  let buffer: string[] = [];
   let i = 0;
-  const flushMd = () => {
-    const text = mdBuffer.join("\n").trim();
-    mdBuffer = [];
-    if (text) segments.push({ type: "html", html: renderMarkdown(text) });
+  const flush = () => {
+    const text = buffer.join("\n").trim();
+    buffer = [];
+    if (text) segments.push({ type: "blocks", blocks: mdToBlocks(text) });
   };
   while (i < lines.length) {
     const open = lines[i].match(/^:::\s*(tip|warning|danger|details)\s*(.*)$/);
     if (open) {
-      flushMd();
+      flush();
       const kind = open[1] as ContainerKind;
       const customTitle = open[2].trim();
       const body: string[] = [];
@@ -117,13 +180,13 @@ export function parseNote(content: string): NoteSegment[] {
         type: "container",
         kind,
         title: customTitle || CONTAINER_DEFAULT_TITLES[kind],
-        html: renderMarkdown(body.join("\n").trim()),
+        blocks: mdToBlocks(body.join("\n").trim()),
       });
     } else {
-      mdBuffer.push(lines[i]);
+      buffer.push(lines[i]);
       i++;
     }
   }
-  flushMd();
+  flush();
   return segments;
 }

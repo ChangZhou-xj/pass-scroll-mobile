@@ -33,6 +33,7 @@
     "build:quickapp-webview-huawei": "uni build -p quickapp-webview-huawei",
     "build:quickapp-webview-union": "uni build -p quickapp-webview-union",
     "type-check": "vue-tsc --noEmit",
+    "test": "vitest run",
     "lint:eslint": "eslint --fix ./src",
     "lint": "npm run lint:eslint",
     "format": "prettier --write ./src",
@@ -102,6 +103,7 @@
     "unocss-preset-weapp": "^66.0.0",
     "unplugin-auto-import": "^19.1.1",
     "vite": "5.2.8",
+    "vitest": "^2.1.9",
     "vue-eslint-parser": "^10.1.1",
     "vue-tsc": "^1.0.24"
   },

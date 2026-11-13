@@ -32,10 +32,10 @@
 
       <view class="my-24rpx h-1rpx bg-[#E3E3E6]" />
 
-      <!-- markdown 分段 -->
+      <!-- markdown 分段：原生组件渲染，全部文字 selectable 可长按/拖选复制 -->
       <view v-for="(seg, index) in segments" :key="index">
-        <rich-text v-if="seg.type === 'html'" :nodes="seg.html" />
-        <MdContainer v-else :kind="seg.kind" :title="seg.title" :html="seg.html" />
+        <MdBlocks v-if="seg.type === 'blocks'" :blocks="seg.blocks" />
+        <MdContainer v-else :kind="seg.kind" :title="seg.title" :blocks="seg.blocks" />
       </view>
     </view>
 

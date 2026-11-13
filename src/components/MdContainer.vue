@@ -9,27 +9,25 @@
       <view class="mb-12rpx">
         <text class="text-28rpx font-semibold text-[#0D0D0D]">{{ title }}</text>
       </view>
-      <rich-text :nodes="html" />
+      <MdBlocks :blocks="blocks" />
     </view>
   </view>
 
   <!-- details：默认折叠的描边卡片，点按头部展开/收起 -->
   <view v-else class="my-16rpx rounded-16rpx border-2rpx border-solid border-[#C4B8EE] bg-[#E7E3FA] p-24rpx">
-    <view class="flex items-center justify-between" @click="toggleOpen">
+    <view class="flex items-center justify-between" @click.stop="toggleOpen">
       <text class="text-28rpx font-semibold text-[#0D0D0D]">{{ title }}</text>
       <text class="ml-16rpx text-24rpx text-[#0D0D0D]">{{ isOpen ? "▼" : "▶" }}</text>
     </view>
-    <rich-text v-if="isOpen" :nodes="html" class="mt-16rpx" />
+    <MdBlocks v-if="isOpen" :blocks="blocks" class="mt-16rpx" />
   </view>
 </template>
 
 <script setup lang="ts">
-import type { ContainerKind } from "@/utils/markdown";
+import type { BlockNode, ContainerKind } from "@/utils/markdown";
 import { ref, computed, watch } from "vue";
 
-const props = defineProps<{ kind: ContainerKind; title: string; html: string }>();
-
-const emit = defineEmits<{ toggle: [open: boolean] }>();
+const props = defineProps<{ kind: ContainerKind; title: string; blocks: BlockNode[] }>();
 
 const THEMES: Record<Exclude<ContainerKind, "details">, { color: string; bg: string }> = {
   tip: { color: "#A9DCC3", bg: "#D6F0E3" },
@@ -43,7 +41,7 @@ const isOpen = ref(false);
 
 // 内容切换（复习页/版本页按 index 复用实例）时复位为折叠，避免跨题残留展开态
 watch(
-  () => [props.html, props.title],
+  () => [props.blocks, props.title],
   () => {
     isOpen.value = false;
   },
@@ -51,6 +49,5 @@ watch(
 
 const toggleOpen = () => {
   isOpen.value = !isOpen.value;
-  emit("toggle", isOpen.value);
 };
 </script>

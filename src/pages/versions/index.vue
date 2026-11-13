@@ -45,8 +45,8 @@
 
         <!-- markdown 分段 -->
         <view v-for="(seg, index) in segments" :key="index">
-          <rich-text v-if="seg.type === 'html'" :nodes="seg.html" />
-          <MdContainer v-else :kind="seg.kind" :title="seg.title" :html="seg.html" />
+          <MdBlocks v-if="seg.type === 'blocks'" :blocks="seg.blocks" />
+          <MdContainer v-else :kind="seg.kind" :title="seg.title" :blocks="seg.blocks" />
         </view>
       </view>
 
